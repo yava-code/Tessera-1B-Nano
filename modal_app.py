@@ -7,19 +7,11 @@ import modal
 
 ROOT = Path(__file__).parent
 REMOTE_ROOT = "/root/ncp-smol"
+REQUIREMENTS = (ROOT / "requirements-modal.txt").read_text(encoding="utf-8").splitlines()
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .uv_pip_install(
-        "torch>=2.5",
-        "transformers>=4.57,<5",
-        "datasets>=3.2",
-        "accelerate>=1.2",
-        "safetensors>=0.4.5",
-        "huggingface-hub>=0.27",
-        "pyyaml>=6.0.2",
-        "numpy>=1.26",
-    )
+    .uv_pip_install(*REQUIREMENTS)
     .add_local_dir(ROOT / "src", f"{REMOTE_ROOT}/src", copy=True)
     .add_local_dir(ROOT / "configs", f"{REMOTE_ROOT}/configs", copy=True)
     .env(
@@ -78,38 +70,20 @@ def evaluate(
 ) -> dict[str, object]:
     sys.path.insert(0, f"{REMOTE_ROOT}/src")
     from ncp_smol.eval import evaluate_checkpoint
-    from ncp_smol.runtime import write_json
+    from ncp_smol.experiment import load_experiment
+    from ncp_smol.runtime import latest_checkpoint, write_json
 
-    result = evaluate_checkpoint(_config(config), checkpoint, batches=batches)
+    config_path = _config(config)
+    if checkpoint == "latest":
+        experiment = load_experiment(config_path)
+        resolved = latest_checkpoint(experiment.run.output_dir)
+        if resolved is None:
+            raise ValueError(f"no checkpoint found for {config}")
+        checkpoint = str(resolved)
+    result = evaluate_checkpoint(config_path, checkpoint, batches=batches)
     output = output or f"/vol/artifacts/{Path(config).stem}-eval.json"
     write_json(output, result)
     return {"output": output, "metrics": result}
-
-
-@app.function(
-    cpu=2,
-    memory=4096,
-    volumes={"/vol": volume},
-    secrets=[modal.Secret.from_name("huggingface")],
-    timeout=14_400,
-)
-def publish_checkpoint(
-    config: str,
-    checkpoint: str,
-    eval_json: str,
-    repo_id: str,
-    private: bool = False,
-) -> str:
-    sys.path.insert(0, f"{REMOTE_ROOT}/src")
-    from ncp_smol.publish import publish
-
-    return publish(
-        _config(config),
-        checkpoint,
-        eval_json,
-        repo_id,
-        private=private,
-    )
 
 
 @app.local_entrypoint()
@@ -125,19 +99,8 @@ def fit(config: str = "tinystories-overfit.yaml") -> None:
 @app.local_entrypoint()
 def eval(
     config: str,
-    checkpoint: str,
+    checkpoint: str = "latest",
     batches: int = 32,
     output: str | None = None,
 ) -> None:
     print(evaluate.remote(config, checkpoint, batches, output))
-
-
-@app.local_entrypoint()
-def publish(
-    config: str,
-    checkpoint: str,
-    eval_json: str,
-    repo_id: str,
-    private: bool = False,
-) -> None:
-    print(publish_checkpoint.remote(config, checkpoint, eval_json, repo_id, private))

@@ -58,9 +58,10 @@ def _token_stream(
 
 def _write_tokens(path: Path, stream: Iterator[int], count: int) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".partial")
     written = 0
     buffer = np.empty(min(count, 1_000_000), dtype=np.uint32)
-    with path.open("wb") as handle:
+    with temporary.open("wb") as handle:
         while written < count:
             size = 0
             while size < len(buffer) and written + size < count:
@@ -68,10 +69,12 @@ def _write_tokens(path: Path, stream: Iterator[int], count: int) -> int:
                     buffer[size] = next(stream)
                 except StopIteration:
                     handle.write(buffer[:size].tobytes())
+                    temporary.replace(path)
                     return written + size
                 size += 1
             handle.write(buffer[:size].tobytes())
             written += size
+    temporary.replace(path)
     return written
 
 
@@ -121,10 +124,13 @@ def prepare(config_path: str | Path) -> dict[str, object]:
     metadata.train_sha256 = sha256_file(output / "train.bin")
     metadata.validation_sha256 = sha256_file(output / "validation.bin")
     payload = asdict(metadata)
-    (output / "metadata.json").write_text(
+    metadata_path = output / "metadata.json"
+    temporary = metadata_path.with_suffix(".json.partial")
+    temporary.write_text(
         json.dumps(payload, indent=2, sort_keys=True),
         encoding="utf-8",
     )
+    temporary.replace(metadata_path)
     return payload
 
 

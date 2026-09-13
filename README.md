@@ -62,8 +62,9 @@ TinyStories architecture overfit:
 ```powershell
 .venv\Scripts\ncp-smol-prepare configs\tinystories-overfit.yaml
 .venv\Scripts\ncp-smol-train configs\tinystories-overfit.yaml
+$checkpoint = (Get-Content runs\tinystories-overfit\latest.json | ConvertFrom-Json).checkpoint
 .venv\Scripts\ncp-smol-eval configs\tinystories-overfit.yaml `
-  runs\tinystories-overfit\step-XXXXXXXX
+  "runs\tinystories-overfit\$checkpoint"
 ```
 
 Modal runs use a persistent `/vol` volume, so prepared tokens and resumable checkpoints do
@@ -109,8 +110,9 @@ results should come directly from `trainer_state.json`, `metrics.jsonl`, and the
 After evaluation, build the checkpoint card locally before uploading:
 
 ```powershell
+$checkpoint = (Get-Content runs\fineweb-edu-ncp\latest.json | ConvertFrom-Json).checkpoint
 .venv\Scripts\ncp-smol-publish configs\fineweb-edu-ncp.yaml `
-  runs\fineweb-edu-ncp\step-XXXXXXXX artifacts\fineweb-edu-ncp-eval.json `
+  "runs\fineweb-edu-ncp\$checkpoint" artifacts\fineweb-edu-ncp-eval.json `
   USERNAME/ncp-smol-360m --dry-run
 ```
 
@@ -121,9 +123,9 @@ For checkpoints that remain on the Modal volume, evaluation and publication can 
 
 ```powershell
 .venv\Scripts\modal.exe run modal_app.py::eval --config fineweb-edu-ncp.yaml `
-  --checkpoint /vol/runs/fineweb-edu-ncp/step-XXXXXXXX
-.venv\Scripts\modal.exe run modal_app.py::publish --config fineweb-edu-ncp.yaml `
-  --checkpoint /vol/runs/fineweb-edu-ncp/step-XXXXXXXX `
+  --checkpoint latest
+.venv\Scripts\modal.exe run modal_publish.py::publish --config fineweb-edu-ncp.yaml `
+  --checkpoint latest `
   --eval-json /vol/artifacts/fineweb-edu-ncp-eval.json `
   --repo-id USERNAME/ncp-smol-360m
 ```

@@ -21,7 +21,7 @@ Evaluate the trained NCP checkpoint in three modes on identical batches:
 
 - `predicted`: normal concept feedback;
 - `zero`: feedback removed;
-- `shuffle`: feedback assigned to the wrong chunk.
+- `shuffle`: feedback assigned to another sequence in the same batch at the same chunk offset.
 
 If both interventions leave NTP loss unchanged within run noise, the decoder is not making
 material use of the learned concept signal. This is stronger evidence than auxiliary loss
@@ -32,6 +32,15 @@ reduction alone.
 Report token cross entropy separately for offsets 0–3 inside each chunk. A genuinely useful
 predicted concept should have its clearest effect near the start of the chunk it conditions.
 This is an exploratory signature, not a guaranteed result.
+
+## H5 — what should NCP predict?
+
+There is a useful discrepancy between the paper and the released Llama path. The paper
+regresses the predicted code mixture toward the next continuous pooled state; the code uses
+the selected next codeword. A short token-matched `continuous` versus `quantized` ablation can
+measure three things before spending on a full second run: early NCP gradient scale, codebook
+utilization, and the zero-feedback intervention delta. This tests whether discretization is
+serving as the target itself or as a constrained prediction basis.
 
 ## Minimum publishable record
 

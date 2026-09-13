@@ -214,7 +214,7 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
         if mode == "zero":
             predicted = torch.zeros_like(predicted)
         elif mode == "shuffle":
-            predicted = predicted.roll(shifts=1, dims=1)
+            predicted = predicted.roll(shifts=1, dims=0)
 
         feedback = self._align_feedback(predicted.detach(), length)
         return feedback, {

@@ -36,11 +36,10 @@ def torch_dtype(name: str) -> torch.dtype:
 
 
 def make_model(config: ExperimentConfig, checkpoint: Path | None = None) -> torch.nn.Module:
-    dtype = torch_dtype(config.model.dtype)
     if checkpoint is not None:
         if config.run.mode == "ncp":
-            return NcpSmolForCausalLM.from_pretrained(checkpoint, dtype=dtype)
-        return AutoModelForCausalLM.from_pretrained(checkpoint, dtype=dtype)
+            return NcpSmolForCausalLM.from_pretrained(checkpoint)
+        return AutoModelForCausalLM.from_pretrained(checkpoint)
 
     if config.run.mode == "ncp":
         return NcpSmolForCausalLM.from_backbone(
@@ -54,12 +53,10 @@ def make_model(config: ExperimentConfig, checkpoint: Path | None = None) -> torc
             ncp_target=config.model.ncp_target,
             ncp_weight=config.model.ncp_weight,
             vq_weight=config.model.vq_weight,
-            dtype=dtype,
         )
     return AutoModelForCausalLM.from_pretrained(
         config.model.base_model,
         revision=config.model.revision,
-        dtype=dtype,
     )
 
 

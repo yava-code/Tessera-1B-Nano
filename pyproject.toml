@@ -33,6 +33,9 @@ ncp-smol-publish = "ncp_smol.publish:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ncp_smol"]
 
+[tool.hatch.build]
+exclude = ["/.cache", "/.venv", "/.git*", "/artifacts", "/build", "/dist", "/runs"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --basetemp=.cache/pytest"

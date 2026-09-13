@@ -14,7 +14,14 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 from .data import TokenBatcher, TokenCorpus, read_metadata
 from .experiment import ExperimentConfig, load_experiment
 from .modeling import NcpSmolForCausalLM
-from .runtime import cosine_schedule, latest_checkpoint, make_model, seed_everything, write_json
+from .runtime import (
+    cosine_schedule,
+    latest_checkpoint,
+    make_model,
+    seed_everything,
+    torch_dtype,
+    write_json,
+)
 
 
 def _checkpoint_state(path: Path) -> dict[str, Any]:
@@ -121,6 +128,19 @@ def run(config_path: str | Path) -> dict[str, Any]:
     required_cache_tokens = config.data.cache_train_tokens or config.data.train_tokens
     if metadata.train_tokens < required_cache_tokens:
         raise ValueError("token cache is smaller than the requested training budget")
+    cache_root = Path(config.data.cache_dir)
+    expected_sizes = {
+        "train.bin": metadata.train_tokens * 4,
+        "validation.bin": metadata.validation_tokens * 4,
+    }
+    incomplete = {}
+    for name, size in expected_sizes.items():
+        path = cache_root / name
+        actual = path.stat().st_size if path.exists() else 0
+        if actual < size:
+            incomplete[name] = actual
+    if incomplete:
+        raise ValueError(f"token cache files are incomplete: {incomplete}")
 
     resume_from = latest_checkpoint(output_dir) if config.run.resume else None
     state = _checkpoint_state(resume_from) if resume_from else {}
@@ -184,6 +204,7 @@ def run(config_path: str | Path) -> dict[str, Any]:
     started = time.monotonic()
     log_path = output_dir / "metrics.jsonl"
     model.train()
+    compute_dtype = torch_dtype(config.model.dtype)
 
     while step < config.max_steps:
         optimizer.zero_grad(set_to_none=True)
@@ -192,8 +213,8 @@ def run(config_path: str | Path) -> dict[str, Any]:
             input_ids = batcher.next().to(device, non_blocking=True)
             with torch.autocast(
                 device_type=device.type,
-                dtype=torch.bfloat16,
-                enabled=device.type == "cuda" and config.model.dtype == "bfloat16",
+                dtype=compute_dtype,
+                enabled=device.type == "cuda" and compute_dtype != torch.float32,
             ):
                 outputs = model(input_ids=input_ids, labels=input_ids)
                 loss = outputs.loss / config.optim.grad_accum_steps

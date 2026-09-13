@@ -65,7 +65,7 @@ def test_future_tokens_do_not_change_prefix_logits() -> None:
 def test_interventions_change_the_concept_conditioning() -> None:
     torch.manual_seed(11)
     model = tiny_model().eval()
-    input_ids = torch.randint(3, 64, (1, 16))
+    input_ids = torch.randint(3, 64, (2, 16))
 
     with torch.no_grad():
         predicted = model(input_ids=input_ids, concept_mode="predicted").logits
