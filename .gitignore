@@ -1,0 +1,15 @@
+.venv/
+.cache/
+artifacts/
+runs/
+data/*.bin
+data/*.json
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.env
+wandb/
+

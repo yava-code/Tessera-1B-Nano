@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ncp-smol"
+version = "0.1.0"
+description = "A small-scale reproduction of Next Concept Prediction on SmolLM2"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "ncp-smol contributors" }]
+dependencies = [
+  "numpy>=1.26",
+  "torch>=2.5",
+  "transformers>=4.57,<5",
+  "safetensors>=0.4.5",
+  "huggingface-hub>=0.27",
+  "pyyaml>=6.0.2",
+]
+
+[project.optional-dependencies]
+data = ["datasets>=3.2"]
+modal = ["modal>=1.0", "datasets>=3.2"]
+dev = ["pytest>=8.3", "ruff>=0.8"]
+
+[project.scripts]
+ncp-smol-prepare = "ncp_smol.prepare:main"
+ncp-smol-train = "ncp_smol.train:main"
+ncp-smol-eval = "ncp_smol.eval:main"
+ncp-smol-publish = "ncp_smol.publish:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ncp_smol"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --basetemp=.cache/pytest"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".cache", "runs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

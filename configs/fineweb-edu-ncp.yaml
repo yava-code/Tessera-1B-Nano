@@ -1,0 +1,57 @@
+run:
+  name: fineweb-edu-ncp
+  mode: ncp
+  output_dir: ${NCP_ROOT}/runs/fineweb-edu-ncp
+  seed: 17
+  resume: true
+
+model:
+  base_model: HuggingFaceTB/SmolLM2-360M
+  revision: f8027fd0eaeea54caa13c31d31b9fdc459c38b49
+  chunk_size: 4
+  segments: 15
+  codebook_size: 64
+  concept_layers: 2
+  insert_layer: 1
+  ncp_target: continuous
+  ncp_weight: 1.0
+  vq_weight: 1.0
+  dtype: bfloat16
+
+data:
+  dataset: HuggingFaceFW/fineweb-edu
+  subset: sample-10BT
+  revision: 87f09149ef4734204d70ed1d046ddc9ca3f2b8f9
+  train_split: train
+  validation_split: null
+  text_column: text
+  cache_dir: ${NCP_ROOT}/.cache/data/fineweb-edu-1b
+  sequence_length: 1024
+  train_tokens: 1000000000
+  cache_train_tokens: null
+  validation_tokens: 10000000
+  shuffle_buffer: 10000
+  overfit: false
+
+optim:
+  learning_rate: 0.00003
+  min_lr_ratio: 0.1
+  warmup_ratio: 0.01
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 1.0e-8
+  micro_batch_size: 8
+  grad_accum_steps: 16
+  max_grad_norm: 1.0
+
+train:
+  log_every_steps: 10
+  eval_every_tokens: 100000000
+  save_every_tokens: 250000000
+  eval_batches: 32
+  max_wall_time_minutes: 1320
+  gpu_hourly_usd: 2.10
+  cost_overhead: 1.15
+  run_budget_usd: 110.0
+  compile: false
