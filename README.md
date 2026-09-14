@@ -17,6 +17,10 @@ A matched quantized-target pilot found a second small-scale failure mode: its NC
 near zero at initialization because transformed codewords were too tightly clustered. The run
 was stopped after 614k tokens rather than presenting a vacuous auxiliary loss as success.
 
+The shared FineWeb-Edu cache is also prepared and hashed: 1.0B train tokens and 10M held-out
+tokens will be read identically by the NTP-only and NTP+NCP arms. Corpus provenance is in
+[results/fineweb-edu](results/fineweb-edu/README.md); the matched training runs are next.
+
 This repository is built for one controlled question: does the ConceptLM objective produce
 a useful signal when continued pretraining is reduced to a 360M backbone and roughly one
 billion tokens?
