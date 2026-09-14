@@ -61,4 +61,4 @@ optim:
 
     assert "Held-out NTP loss | 2.5000" in card
     assert "Training tokens | 64" in card
-    assert "Tracked compute estimate | $2.42" in card
+    assert "Tracked compute estimate | $2.74" in card

@@ -112,12 +112,13 @@ The hypotheses and falsification rules are in [docs/experiments.md](docs/experim
 
 ## Scale and cost
 
-The main configs request 1.0B tokens per arm, within the intended 0.5–1.5B range. Each GPU
-job has a `$110` hard software cap. The current 22-hour A100-40GB timeout corresponds to
-about `$53` in GPU time at `$2.10/hour`, plus the configured 15% allowance for CPU, memory,
-and storage. The 135M TinyStories gate runs separately on an L4 with a `$6` cap. Actual
-tokens, wall time, and the same cost estimate are written into every checkpoint rather than
-inferred later.
+The main configs request 1.0B tokens per arm, within the intended 0.5–1.5B range. Each A100
+run has a `$60` software cap and a 22-hour wall-clock limit. The tracked all-in allocation
+rate is `$2.74/hour`: one A100-40GB, eight CPU cores, and 32 GiB of memory at the rates used
+when the run was configured. The two training arms are therefore capped at about `$120`
+combined, excluding data preparation, evaluation, and storage. The 135M TinyStories gate
+runs separately on an L4 with a `$6` cap. Actual tokens, wall time, and the same cost estimate
+are written into every checkpoint rather than inferred later.
 
 The main-run numbers are experiment settings, not claimed spend. Completed TinyStories costs
 and metrics are taken directly from `trainer_state.json`, `metrics.jsonl`, and the eval JSON.

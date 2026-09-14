@@ -70,9 +70,8 @@ class TrainConfig:
     save_every_tokens: int = 250_000_000
     eval_batches: int = 32
     max_wall_time_minutes: int = 1_320
-    gpu_hourly_usd: float = 2.10
-    cost_overhead: float = 1.15
-    run_budget_usd: float = 110.0
+    hourly_cost_usd: float = 2.74
+    run_budget_usd: float = 60.0
     compile: bool = False
 
 

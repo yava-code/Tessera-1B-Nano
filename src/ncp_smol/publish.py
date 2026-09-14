@@ -27,7 +27,7 @@ def build_card(
     result = evaluation.get("predicted", evaluation)
     interventions = evaluation.get("intervention", {})
     cost = float(state["billable_seconds"]) / 3600
-    cost *= config.train.gpu_hourly_usd * config.train.cost_overhead
+    cost *= config.train.hourly_cost_usd
 
     intervention_rows = ""
     if interventions:

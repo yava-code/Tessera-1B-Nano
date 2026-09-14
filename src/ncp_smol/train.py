@@ -247,8 +247,7 @@ def run(config_path: str | Path) -> dict[str, Any]:
                 "estimated_cost_usd": (
                     (prior_seconds + elapsed)
                     / 3600
-                    * config.train.gpu_hourly_usd
-                    * config.train.cost_overhead
+                    * config.train.hourly_cost_usd
                 ),
                 **{name: value / config.optim.grad_accum_steps for name, value in sums.items()},
             }
@@ -284,8 +283,7 @@ def run(config_path: str | Path) -> dict[str, Any]:
         estimated_cost = (
             (prior_seconds + time.monotonic() - started)
             / 3600
-            * config.train.gpu_hourly_usd
-            * config.train.cost_overhead
+            * config.train.hourly_cost_usd
         )
         if (
             elapsed_minutes >= config.train.max_wall_time_minutes
@@ -310,7 +308,7 @@ def run(config_path: str | Path) -> dict[str, Any]:
         "step": step,
         "tokens": tokens_seen,
         "estimated_cost_usd": (
-            billable_seconds / 3600 * config.train.gpu_hourly_usd * config.train.cost_overhead
+            billable_seconds / 3600 * config.train.hourly_cost_usd
         ),
     }
 

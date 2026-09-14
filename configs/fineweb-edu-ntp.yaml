@@ -51,7 +51,6 @@ train:
   save_every_tokens: 250000000
   eval_batches: 32
   max_wall_time_minutes: 1320
-  gpu_hourly_usd: 2.10
-  cost_overhead: 1.15
-  run_budget_usd: 110.0
+  hourly_cost_usd: 2.74
+  run_budget_usd: 60.0
   compile: false
