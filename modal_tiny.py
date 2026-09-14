@@ -27,55 +27,26 @@ image = (
     )
 )
 
-app = modal.App("ncp-smol", image=image)
+app = modal.App("ncp-smol-tiny", image=image)
 volume = modal.Volume.from_name("ncp-smol", create_if_missing=True)
 
 
-def _config(name: str) -> str:
-    return f"{REMOTE_ROOT}/configs/{name}"
-
-
-@app.function(cpu=8, memory=16384, volumes={"/vol": volume}, timeout=86_400)
-def prepare_data(config: str) -> dict[str, object]:
-    sys.path.insert(0, f"{REMOTE_ROOT}/src")
-    from ncp_smol.prepare import prepare
-
-    return prepare(_config(config))
-
-
-@app.function(
-    gpu="A100-40GB",
-    cpu=8,
-    memory=32768,
-    volumes={"/vol": volume},
-    timeout=82_800,
-)
+@app.function(gpu="L4", cpu=8, memory=32768, volumes={"/vol": volume}, timeout=10_800)
 def train(config: str) -> dict[str, object]:
     sys.path.insert(0, f"{REMOTE_ROOT}/src")
     from ncp_smol.train import run
 
-    return run(_config(config))
+    return run(f"{REMOTE_ROOT}/configs/{config}")
 
 
-@app.function(
-    gpu="A100-40GB",
-    cpu=4,
-    memory=16384,
-    volumes={"/vol": volume},
-    timeout=14_400,
-)
-def evaluate(
-    config: str,
-    checkpoint: str,
-    batches: int = 32,
-    output: str | None = None,
-) -> dict[str, object]:
+@app.function(gpu="L4", cpu=4, memory=16384, volumes={"/vol": volume}, timeout=3_600)
+def evaluate(config: str, checkpoint: str, batches: int = 32) -> dict[str, object]:
     sys.path.insert(0, f"{REMOTE_ROOT}/src")
     from ncp_smol.eval import evaluate_checkpoint
     from ncp_smol.experiment import load_experiment
     from ncp_smol.runtime import latest_checkpoint, write_json
 
-    config_path = _config(config)
+    config_path = f"{REMOTE_ROOT}/configs/{config}"
     if checkpoint == "latest":
         experiment = load_experiment(config_path)
         resolved = latest_checkpoint(experiment.run.output_dir)
@@ -83,14 +54,9 @@ def evaluate(
             raise ValueError(f"no checkpoint found for {config}")
         checkpoint = str(resolved)
     result = evaluate_checkpoint(config_path, checkpoint, batches=batches)
-    output = output or f"/vol/artifacts/{Path(config).stem}-{Path(checkpoint).name}-eval.json"
+    output = f"/vol/artifacts/{Path(config).stem}-{Path(checkpoint).name}-eval.json"
     write_json(output, result)
     return {"output": output, "metrics": result}
-
-
-@app.local_entrypoint()
-def prepare(config: str = "tinystories-overfit.yaml") -> None:
-    print(prepare_data.remote(config))
 
 
 @app.local_entrypoint()
@@ -100,9 +66,8 @@ def fit(config: str = "tinystories-overfit.yaml") -> None:
 
 @app.local_entrypoint()
 def eval(
-    config: str,
+    config: str = "tinystories-overfit.yaml",
     checkpoint: str = "latest",
     batches: int = 32,
-    output: str | None = None,
 ) -> None:
-    print(evaluate.remote(config, checkpoint, batches, output))
+    print(evaluate.remote(config, checkpoint, batches))

@@ -42,6 +42,23 @@ measure three things before spending on a full second run: early NCP gradient sc
 utilization, and the zero-feedback intervention delta. This tests whether discretization is
 serving as the target itself or as a constrained prediction basis.
 
+The first direct swap failed this scale check: quantized-target NCP loss stayed around
+`1e-6`, versus order `1` for the continuous target. The transformed codewords were too tightly
+clustered for selected-code prediction to define a meaningful initial error. A valid repeat
+therefore needs normalized or variance-matched codewords before it can be called token-matched.
+
+## H6 — the global-code shortcut
+
+Codebook usage alone can hide a low-entropy solution. The TinyStories gate used more than
+40% of code indices during intervention evaluation, yet its effective codebook perplexity was
+only about 2.4 and shuffling feedback across sequences did not change NTP loss. A useful
+concept vocabulary should pass all three checks: non-trivial effective perplexity, a positive
+zero-feedback delta, and a positive sequence-shuffle delta.
+
+For the next pilot, record code perplexity and both intervention deltas throughout training.
+Introduce a minimal diversity term only if a scale-corrected target still takes the same
+shortcut; otherwise target geometry is the cleaner explanation.
+
 ## Minimum publishable record
 
 Archive the config, model revision, dataset revision, token-cache hashes, metrics log,

@@ -7,6 +7,16 @@ four token states are pooled into a concept, product-quantized, passed through a
 concept module, and used to predict the next concept. The predicted concept is then added
 back to the token backbone before the second decoder layer.
 
+The first TinyStories architecture gate is complete: NTP, NCP, and VQ train losses fell by
+roughly 41–43% over 16.8M tokens on a fixed subset. Causal evaluation also exposed a useful
+failure mode: zeroing concept feedback hurts NTP, while shuffling it across sequences does not.
+The full record and interpretation are in
+[results/tinystories-overfit](results/tinystories-overfit/README.md).
+
+A matched quantized-target pilot found a second small-scale failure mode: its NCP loss was
+near zero at initialization because transformed codewords were too tightly clustered. The run
+was stopped after 614k tokens rather than presenting a vacuous auxiliary loss as success.
+
 This repository is built for one controlled question: does the ConceptLM objective produce
 a useful signal when continued pretraining is reduced to a 360M backbone and roughly one
 billion tokens?
@@ -71,10 +81,10 @@ Modal runs use a persistent `/vol` volume, so prepared tokens and resumable chec
 not disappear with a container:
 
 ```powershell
-.venv\Scripts\modal.exe run modal_app.py::prepare --config tinystories-overfit.yaml
-.venv\Scripts\modal.exe run modal_app.py::fit --config tinystories-overfit.yaml
+.venv\Scripts\modal.exe run modal_prepare.py::prepare --config tinystories-overfit.yaml
+.venv\Scripts\modal.exe run modal_tiny.py::fit --config tinystories-overfit.yaml
 
-.venv\Scripts\modal.exe run modal_app.py::prepare --config fineweb-edu-ncp.yaml
+.venv\Scripts\modal.exe run modal_prepare.py::prepare --config fineweb-edu-ncp.yaml
 .venv\Scripts\modal.exe run modal_app.py::fit --config fineweb-edu-ntp.yaml
 .venv\Scripts\modal.exe run modal_app.py::fit --config fineweb-edu-ncp.yaml
 ```
@@ -101,11 +111,12 @@ The hypotheses and falsification rules are in [docs/experiments.md](docs/experim
 The main configs request 1.0B tokens per arm, within the intended 0.5–1.5B range. Each GPU
 job has a `$110` hard software cap. The current 22-hour A100-40GB timeout corresponds to
 about `$53` in GPU time at `$2.10/hour`, plus the configured 15% allowance for CPU, memory,
-and storage. TinyStories has a `$6` cap. Actual tokens, wall time, and the same cost estimate
-are written into every checkpoint rather than inferred later.
+and storage. The 135M TinyStories gate runs separately on an L4 with a `$6` cap. Actual
+tokens, wall time, and the same cost estimate are written into every checkpoint rather than
+inferred later.
 
-These numbers are experiment settings, not claimed spend or completed results. Published
-results should come directly from `trainer_state.json`, `metrics.jsonl`, and the eval JSON.
+The main-run numbers are experiment settings, not claimed spend. Completed TinyStories costs
+and metrics are taken directly from `trainer_state.json`, `metrics.jsonl`, and the eval JSON.
 
 After evaluation, build the checkpoint card locally before uploading:
 
@@ -123,7 +134,8 @@ For checkpoints that remain on the Modal volume, evaluation and publication can 
 
 ```powershell
 .venv\Scripts\modal.exe run modal_app.py::eval --config fineweb-edu-ncp.yaml `
-  --checkpoint latest
+  --checkpoint latest `
+  --output /vol/artifacts/fineweb-edu-ncp-eval.json
 .venv\Scripts\modal.exe run modal_publish.py::publish --config fineweb-edu-ncp.yaml `
   --checkpoint latest `
   --eval-json /vol/artifacts/fineweb-edu-ncp-eval.json `

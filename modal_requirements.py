@@ -1,0 +1,9 @@
+REQUIREMENTS = (
+    "torch==2.14.0",
+    "transformers==4.57.6",
+    "datasets==5.0.1",
+    "safetensors==0.8.0",
+    "huggingface-hub==0.36.2",
+    "pyyaml==6.0.3",
+    "numpy==2.4.6",
+)

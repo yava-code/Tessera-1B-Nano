@@ -1,0 +1,14 @@
+{
+  "dataset": "roneneldan/TinyStories",
+  "dtype": "uint32",
+  "eos_token_id": 0,
+  "revision": "f54c09fd23315a6f9c86f9dc80f725de7d8f9c64",
+  "sequence_length": 256,
+  "subset": null,
+  "tokenizer": "HuggingFaceTB/SmolLM2-135M",
+  "tokenizer_revision": "93efa2f097d58c2a74874c7e644dbc9b0cee75a2",
+  "train_sha256": "1b72ac9f0a05d841df30feb6feb8fbd7c38170d61528e78cfea3b04c491cc025",
+  "train_tokens": 1048576,
+  "validation_sha256": "6f0c6b7c842665a23d593f34c00ac7d7a9a9b3050a3d1d1592fac27b12be2462",
+  "validation_tokens": 1048576
+}

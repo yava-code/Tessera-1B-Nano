@@ -1,0 +1,60 @@
+{
+  "data": {
+    "cache_dir": "/vol/.cache/data/tinystories-overfit",
+    "cache_train_tokens": 1048576,
+    "dataset": "roneneldan/TinyStories",
+    "overfit": true,
+    "revision": "f54c09fd23315a6f9c86f9dc80f725de7d8f9c64",
+    "sequence_length": 256,
+    "shuffle_buffer": 2000,
+    "subset": null,
+    "text_column": "text",
+    "train_split": "train",
+    "train_tokens": 16777216,
+    "validation_split": "validation",
+    "validation_tokens": 1048576
+  },
+  "model": {
+    "base_model": "HuggingFaceTB/SmolLM2-135M",
+    "chunk_size": 4,
+    "codebook_size": 64,
+    "concept_layers": 2,
+    "dtype": "bfloat16",
+    "insert_layer": 1,
+    "ncp_target": "quantized",
+    "ncp_weight": 1.0,
+    "revision": "93efa2f097d58c2a74874c7e644dbc9b0cee75a2",
+    "segments": 9,
+    "vq_weight": 1.0
+  },
+  "optim": {
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "eps": 1e-08,
+    "grad_accum_steps": 4,
+    "learning_rate": 3e-05,
+    "max_grad_norm": 1.0,
+    "micro_batch_size": 4,
+    "min_lr_ratio": 0.1,
+    "warmup_ratio": 0.01,
+    "weight_decay": 0.1
+  },
+  "run": {
+    "mode": "ncp",
+    "name": "tinystories-overfit-quantized",
+    "output_dir": "/vol/runs/tinystories-overfit-quantized",
+    "resume": true,
+    "seed": 17
+  },
+  "train": {
+    "compile": false,
+    "cost_overhead": 1.15,
+    "eval_batches": 16,
+    "eval_every_tokens": 4194304,
+    "gpu_hourly_usd": 0.8,
+    "log_every_steps": 10,
+    "max_wall_time_minutes": 180,
+    "run_budget_usd": 6.0,
+    "save_every_tokens": 8388608
+  }
+}

@@ -1,7 +1,7 @@
 run:
-  name: tinystories-overfit
+  name: tinystories-overfit-quantized
   mode: ncp
-  output_dir: ${NCP_ROOT}/runs/tinystories-overfit
+  output_dir: ${NCP_ROOT}/runs/tinystories-overfit-quantized
   seed: 17
   resume: true
 
@@ -13,7 +13,7 @@ model:
   codebook_size: 64
   concept_layers: 2
   insert_layer: 1
-  ncp_target: continuous
+  ncp_target: quantized
   ncp_weight: 1.0
   vq_weight: 1.0
   dtype: bfloat16
