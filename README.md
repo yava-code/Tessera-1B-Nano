@@ -89,8 +89,16 @@ not disappear with a container:
 .venv\Scripts\modal.exe run modal_tiny.py::fit --config tinystories-overfit.yaml
 
 .venv\Scripts\modal.exe run modal_prepare.py::prepare --config fineweb-edu-ncp.yaml
-.venv\Scripts\modal.exe run modal_app.py::fit --config fineweb-edu-ntp.yaml
-.venv\Scripts\modal.exe run modal_app.py::fit --config fineweb-edu-ncp.yaml
+.venv\Scripts\modal.exe deploy modal_app.py
+.venv\Scripts\python.exe modal_submit.py submit fineweb-edu-ntp.yaml
+.venv\Scripts\python.exe modal_submit.py submit fineweb-edu-ncp.yaml
+```
+
+Main training uses a deployed function and a durable spawned call. The returned
+`function_call_id` can be checked from another machine or client session:
+
+```powershell
+.venv\Scripts\python.exe modal_submit.py status fc-...
 ```
 
 The two FineWeb-Edu arms read the same packed token cache. They share the backbone,

@@ -47,6 +47,7 @@ def prepare_data(config: str) -> dict[str, object]:
     gpu="A100-40GB",
     cpu=8,
     memory=32768,
+    max_containers=1,
     volumes={"/vol": volume},
     timeout=82_800,
 )
@@ -91,11 +92,6 @@ def evaluate(
 @app.local_entrypoint()
 def prepare(config: str = "tinystories-overfit.yaml") -> None:
     print(prepare_data.remote(config))
-
-
-@app.local_entrypoint()
-def fit(config: str = "tinystories-overfit.yaml") -> None:
-    print(train.remote(config))
 
 
 @app.local_entrypoint()
