@@ -12,6 +12,20 @@ class DummyTokenizer:
         (Path(path) / "tokenizer_config.json").write_text("{}", encoding="utf-8")
 
 
+def test_trim_metrics_removes_orphaned_resume_tail(tmp_path: Path) -> None:
+    path = tmp_path / "metrics.jsonl"
+    records = [
+        {"event": "train", "tokens": 16},
+        {"event": "eval", "tokens": 32},
+        {"event": "train", "tokens": 48},
+    ]
+    path.write_text("".join(f"{json.dumps(row)}\n" for row in records), encoding="utf-8")
+
+    assert train._trim_metrics(path, 32) == 1
+    saved = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    assert saved == records[:2]
+
+
 def test_trainer_writes_resumable_checkpoint(tmp_path: Path, monkeypatch) -> None:
     cache = tmp_path / "data"
     cache.mkdir()

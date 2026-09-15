@@ -28,6 +28,18 @@ def _checkpoint_state(path: Path) -> dict[str, Any]:
     return json.loads((path / "trainer_state.json").read_text(encoding="utf-8"))
 
 
+def _trim_metrics(path: Path, tokens_seen: int) -> int:
+    if not path.exists():
+        return 0
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    kept = [line for line in lines if json.loads(line)["tokens"] <= tokens_seen]
+    removed = len(lines) - len(kept)
+    if removed:
+        path.write_text("".join(f"{line}\n" for line in kept), encoding="utf-8")
+    return removed
+
+
 def _save(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -195,6 +207,22 @@ def run(config_path: str | Path) -> dict[str, Any]:
     tokens_seen = int(state.get("tokens_seen", 0))
     starting_tokens = tokens_seen
     prior_seconds = float(state.get("billable_seconds", 0.0))
+    log_path = output_dir / "metrics.jsonl"
+    if resume_from:
+        discarded = _trim_metrics(log_path, tokens_seen)
+        print(
+            json.dumps(
+                {
+                    "event": "resume",
+                    "checkpoint": resume_from.name,
+                    "step": step,
+                    "tokens": tokens_seen,
+                    "discarded_metrics": discarded,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
     next_eval = (
         (tokens_seen // config.train.eval_every_tokens) + 1
     ) * config.train.eval_every_tokens
@@ -202,7 +230,6 @@ def run(config_path: str | Path) -> dict[str, Any]:
         (tokens_seen // config.train.save_every_tokens) + 1
     ) * config.train.save_every_tokens
     started = time.monotonic()
-    log_path = output_dir / "metrics.jsonl"
     model.train()
     compute_dtype = torch_dtype(config.model.dtype)
 
