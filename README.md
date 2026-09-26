@@ -17,9 +17,15 @@ A matched quantized-target pilot found a second small-scale failure mode: its NC
 near zero at initialization because transformed codewords were too tightly clustered. The run
 was stopped after 614k tokens rather than presenting a vacuous auxiliary loss as success.
 
-The shared FineWeb-Edu cache is also prepared and hashed: 1.0B train tokens and 10M held-out
-tokens will be read identically by the NTP-only and NTP+NCP arms. Corpus provenance is in
-[results/fineweb-edu](results/fineweb-edu/README.md); the matched training runs are next.
+The shared FineWeb-Edu cache was prepared and hashed: 1.0B train tokens and 10M held-out
+tokens, read identically by both arms. The matched comparison is complete: both arms
+consumed exactly 999,948,288 tokens. Final held-out NTP loss is 2.5135 for NTP-only and
+2.5142 for NTP+NCP — neutral within run noise. The concept path is demonstrably used
+(zeroing feedback costs +0.105 NTP loss) and learns a rich codebook (perplexity 7.55), but
+its benefit is sequence-generic: shuffled feedback works as well as the sequence's own.
+The full verdict is in [results/fineweb-edu](results/fineweb-edu/README.md), with per-arm
+records in [results/fineweb-edu-ntp](results/fineweb-edu-ntp/README.md) and
+[results/fineweb-edu-ncp](results/fineweb-edu-ncp/README.md).
 
 This repository is built for one controlled question: does the ConceptLM objective produce
 a useful signal when continued pretraining is reduced to a 360M backbone and roughly one

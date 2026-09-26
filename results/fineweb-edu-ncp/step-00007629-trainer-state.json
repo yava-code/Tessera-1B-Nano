@@ -1,0 +1,9 @@
+{
+  "batcher": {
+    "cursor": 976512,
+    "epoch": 0
+  },
+  "billable_seconds": 39772.339081414,
+  "step": 7629,
+  "tokens_seen": 999948288
+}
