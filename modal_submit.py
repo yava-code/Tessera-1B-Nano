@@ -49,7 +49,8 @@ def _call_status(call_id: str) -> dict[str, object]:
     call = modal.FunctionCall.from_id(call_id)
     try:
         result = call.get(timeout=0)
-    except ModalTimeoutError:
+    except (ModalTimeoutError, TimeoutError):
+        # modal's poll_function raises the builtin TimeoutError on poll timeouts
         return {"status": "running", "function_call_id": call_id}
     except OutputExpiredError:
         return {
