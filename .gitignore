@@ -13,4 +13,5 @@ __pycache__/
 .ruff_cache/
 .coverage
 .env
+state/
 wandb/
