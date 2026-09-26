@@ -72,10 +72,10 @@ def _call_logs(call_id: str, tail: int) -> dict[str, object]:
     call = modal.FunctionCall.from_id(call_id)
     lines: list[str] = []
     try:
-        for item in call.logs():
-            text = getattr(item, "text", None)
-            if isinstance(text, str) and text.strip():
-                lines.extend(text.splitlines())
+        for item in call.logs.tail(entries=max(tail, 1)):
+            message = getattr(item, "message", None)
+            if isinstance(message, str) and message.strip():
+                lines.extend(message.splitlines())
     except NotFoundError:
         return {"status": "not_found", "function_call_id": call_id}
     return {"function_call_id": call_id, "log_tail": lines[-tail:]}
