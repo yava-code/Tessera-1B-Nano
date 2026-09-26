@@ -89,6 +89,24 @@ def evaluate(
     return {"output": output, "metrics": result}
 
 
+@app.function(cpu=2, memory=4096, volumes={"/vol": volume}, timeout=600)
+def read_progress(config: str) -> dict[str, object]:
+    sys.path.insert(0, f"{REMOTE_ROOT}/src")
+    from ncp_smol.experiment import load_experiment
+    from ncp_smol.progress import progress_from_files
+
+    experiment = load_experiment(_config(config))
+    return progress_from_files(
+        Path(experiment.run.output_dir),
+        max_steps=experiment.max_steps,
+    )
+
+
+@app.local_entrypoint()
+def progress(config: str) -> None:
+    print(read_progress.remote(config))
+
+
 @app.local_entrypoint()
 def prepare(config: str = "tinystories-overfit.yaml") -> None:
     print(prepare_data.remote(config))
