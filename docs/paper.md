@@ -107,6 +107,13 @@ FineWeb-Edu train-loss means, first ten versus last ten windows: NTP 2.5438 -> 2
 (−1.2%), NCP 2.4505 -> 1.8220 (−25.6%), VQ 2.4572 -> 1.7890 (−27.2%). Unlike the aborted
 quantized pilot, no auxiliary loss is degenerate; the concept objective learns.
 
+![Held-out dynamics of both arms](figures/held-out-dynamics.png)
+
+*Figure 1 — Held-out dynamics at the nine 100M-token checkpoints. (a) The NTP+NCP arm
+tracks the NTP-only arm's token objective to within half a thousandth of a nat everywhere:
+the neutral H2 is the two nearly identical curves. (b) At the same checkpoints the
+auxiliary losses fall sharply and without collapse: the concept objectives learn.*
+
 ### 4.3 Interventions: the channel is used, rich, and generic (H3/H6)
 
 At the final checkpoint, on identical held-out batches:
@@ -133,6 +140,14 @@ Three readings, in the order we consider them most important:
 
 The same zero-hurts/shuffle-does-not split appeared at the 135M TinyStories gate. Two
 scales, two data regimes, one replicated structure.
+
+![Codebook growth over the run](figures/codebook-growth.png)
+
+*Figure 2 — Codebook growth: effective perplexity 2.93 -> 7.41 and usage 74.8% -> 84.3%
+across the nine held-out checkpoints (7.55 / 85.6% at the final intervention evaluation).
+The dotted reference marks the low-entropy shortcut the TinyStories gate fell into
+(~2.4 perplexity, 31–41% usage); at 1B tokens the codebook stays far above it and keeps
+enriching throughout training.*
 
 Boundary profile (H4): the zero-delta decays slightly across the chunk, +0.1066 at offset
 0 to +0.1039 at offset 3 — the predicted concept helps most where it is freshest, as
@@ -194,7 +209,9 @@ final trainer state (step, token cursor, wall time), `experiment.json`, and the 
 intervention evaluation JSON. The held-out batches are fixed by seed, so reported losses
 are batch-exact. Model and dataset caches, the trainer, evaluator, and publisher are open
 under Apache-2.0; the 21-test suite covers causality, data order, quantizer behavior,
-progress reporting, and card building.
+progress reporting, and card building. The figures in this document regenerate from the
+committed metric logs with `docs/figures/make_figures.py` (matplotlib is not a project
+dependency; the script documents its ephemeral invocation).
 
 ## References
 
