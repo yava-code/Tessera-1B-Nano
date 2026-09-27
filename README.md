@@ -30,7 +30,9 @@ records in [results/fineweb-edu-ntp](results/fineweb-edu-ntp/README.md) and
 Publication materials built from that record: the paper draft
 ([docs/paper.md](docs/paper.md)), post drafts for X, Reddit/HN, and a Russian-language
 short post ([docs/posts.md](docs/posts.md)), and the Hugging Face model card draft
-([docs/model-card.md](docs/model-card.md)).
+([docs/model-card.md](docs/model-card.md)). The step-by-step publication procedure —
+creating the Modal `huggingface` secret and running the remote publish — is
+[docs/publishing-checklist.md](docs/publishing-checklist.md).
 
 This repository is built for one controlled question: does the ConceptLM objective produce
 a useful signal when continued pretraining is reduced to a 360M backbone and roughly one
@@ -167,7 +169,8 @@ For checkpoints that remain on the Modal volume, evaluation and publication can 
 ```
 
 Remote publication expects a Modal secret named `huggingface` with the `HF_TOKEN` key. Create
-and review that secret in Modal before invoking the publish entrypoint.
+and review that secret in Modal before invoking the publish entrypoint. The full
+step-by-step checklist is in [docs/publishing-checklist.md](docs/publishing-checklist.md).
 
 ## References
 

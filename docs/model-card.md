@@ -5,7 +5,8 @@ against the committed eval artifact; see `artifacts/card-dry-run/` locally). Thi
 version adds the neutral-comparison context and the reading of the intervention deltas.
 Before uploading: replace `USERNAME`, delete this note, and regenerate the factual tables
 via `modal_publish.py` after creating the Modal `huggingface` secret (`HF_TOKEN`) — the
-upload itself stays gated on that secret.
+upload itself stays gated on that secret. The full publication procedure is
+[docs/publishing-checklist.md](docs/publishing-checklist.md).
 
 ---
 
