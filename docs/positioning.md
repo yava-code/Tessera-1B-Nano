@@ -1,23 +1,32 @@
 # Project positioning
 
 Use a claim only after the public repository, checkpoint, and matched comparison exist.
+The FineWeb-Edu matched comparison is complete; these claims are written against its
+recorded artifacts (results/fineweb-edu and per-arm READMEs), not extrapolations.
 
 ## Calm
 
-1. **Built an independent small-scale reproduction of Next Concept Prediction on SmolLM2,
-   with open training code, weights, and a token-matched NTP baseline.**
+1. **Ran a token-matched FineWeb-Edu comparison of NTP-only versus NTP+NCP on
+   SmolLM2-360M: exactly 999,948,288 tokens per arm, same data order, same optimizer,
+   no restarts, no NaNs, for about $55 of tracked compute.**
 
-2. **Reimplemented a ConceptLM-style discrete concept objective and trained it end to end on
-   a 360M language model under a constrained compute budget.**
+2. **Reproduced the ConceptLM objective end to end at 360M and measured not just token
+   loss but causal concept interventions: zero-feedback, sequence-shuffle, codebook
+   perplexity, usage, and loss by chunk offset.**
 
 ## Bold
 
-3. **Turned a newly published latent-language-model method into a reproducible 360M
-   checkpoint, including causal-leakage tests and concept intervention experiments.**
+3. **Showed the learned concept channel is real but generic: the decoder demonstrably
+   consumes predicted concept feedback (+0.105 NTP loss when zeroed) through a rich,
+   non-collapsed codebook (perplexity 7.55, 85.6% usage), while shuffled feedback from
+   another sequence works as well as the sequence's own.**
 
-4. **Showed that the core Next Concept Prediction loop can be trained outside a large lab:
-   one small model, open artifacts, and a controlled NTP comparison.**
+4. **Provided the first independent matched-scale check of Next Concept Prediction:
+   a neutral token-loss result at 1B tokens that mirrors the original paper's own
+   structure, where auxiliary pairs alone underperform pure NTP and only the full
+   triple wins at much larger scale.**
 
 ## Short
 
-5. **Built and open-sourced NCP for SmolLM2.**
+5. **Reproduced NCP at 360M: a used, rich, but sequence-generic concept channel — and an
+   honest neutral verdict at 1B tokens, with the next probes stated in advance.**

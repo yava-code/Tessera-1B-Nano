@@ -27,6 +27,11 @@ The full verdict is in [results/fineweb-edu](results/fineweb-edu/README.md), wit
 records in [results/fineweb-edu-ntp](results/fineweb-edu-ntp/README.md) and
 [results/fineweb-edu-ncp](results/fineweb-edu-ncp/README.md).
 
+Publication materials built from that record: the paper draft
+([docs/paper.md](docs/paper.md)), post drafts for X, Reddit/HN, and a Russian-language
+short post ([docs/posts.md](docs/posts.md)), and the Hugging Face model card draft
+([docs/model-card.md](docs/model-card.md)).
+
 This repository is built for one controlled question: does the ConceptLM objective produce
 a useful signal when continued pretraining is reduced to a 360M backbone and roughly one
 billion tokens?

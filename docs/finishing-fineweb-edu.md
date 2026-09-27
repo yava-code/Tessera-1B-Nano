@@ -1,5 +1,9 @@
 # Finishing the FineWeb-Edu matched run
 
+> **Status: completed.** Both arms finished, the intervention evaluation ran on the
+> volume, artifacts are archived under `results/`, and the verdict is recorded in
+> `results/fineweb-edu/README.md` and `docs/experiments.md`. Kept for provenance.
+
 The NCP arm was submitted as a durable Modal call during the previous session. This file
 records how to monitor it and what to do when it finishes.
 
