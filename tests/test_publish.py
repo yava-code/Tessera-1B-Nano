@@ -126,3 +126,57 @@ optim:
     card = build_card(config, checkpoint, evaluation)
 
     assert "Codebook perplexity / usage | 7.5477 / 85.6%" in card
+
+
+def test_model_card_baseline_branch(tmp_path: Path) -> None:
+    config = tmp_path / "config.yaml"
+    config.write_text(
+        """
+run:
+  name: test
+  mode: ntp
+  output_dir: runs/test
+model:
+  base_model: example/base
+  chunk_size: 4
+  segments: 4
+  codebook_size: 8
+  concept_layers: 1
+  insert_layer: 1
+  dtype: float32
+data:
+  dataset: example/data
+  subset: null
+  revision: abc
+  train_split: train
+  validation_split: validation
+  text_column: text
+  cache_dir: data
+  sequence_length: 16
+  train_tokens: 64
+  validation_tokens: 32
+optim:
+  micro_batch_size: 1
+  grad_accum_steps: 1
+""".strip(),
+        encoding="utf-8",
+    )
+    checkpoint = tmp_path / "checkpoint"
+    checkpoint.mkdir()
+    (checkpoint / "trainer_state.json").write_text(
+        json.dumps({"tokens_seen": 64, "billable_seconds": 3600}),
+        encoding="utf-8",
+    )
+    evaluation = tmp_path / "eval.json"
+    evaluation.write_text(
+        json.dumps({"predicted": {"ntp_loss": 2.5, "perplexity": 12.1825}}),
+        encoding="utf-8",
+    )
+
+    card = build_card(config, checkpoint, evaluation)
+
+    assert "# Tessera-1B-Nano-Base" in card
+    assert "matched NTP-only baseline" in card
+    assert "Tessera-1B-Nano" in card
+    assert "Zero feedback delta" not in card
+    assert "AutoModelForCausalLM.from_pretrained(\"REPO_ID\")" in card

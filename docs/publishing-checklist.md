@@ -44,19 +44,23 @@ except `optimizer.pt` (excluded by `ignore_patterns`). That is the model, tokeni
 
 ## 2. Decide repo id and visibility
 
-- Repo id used throughout: `Paragon-Intelligence-Labs/Tessera-1B-Nano`. The token's HF
-  account must own the `Paragon-Intelligence-Labs` namespace; if it does not, use your own
-  namespace instead and update the snippets.
+- Executed 2026-09-29: the `Paragon-Intelligence-Labs` org is not available to the token,
+  so `whoami` resolved the namespace to the personal account `yava-code`. Published repos:
+  [yava-code/Tessera-1B-Nano](https://huggingface.co/yava-code/Tessera-1B-Nano) and
+  [yava-code/Tessera-1B-Nano-Base](https://huggingface.co/yava-code/Tessera-1B-Nano-Base).
+  The brand lives in the cards. If the org is granted later, both repos can be moved in
+  the HF UI without a re-upload.
 - Repo starts public by default; add `--private` for a first private upload and flip it
   in the HF UI later. `publish()` calls `create_repo(..., exist_ok=True)`, so a retry is
   safe and re-uploads over the same repo.
 
-## 3. Review the card one last time
+## 3. Review the card one last time (done)
 
 The uploaded card is generated remotely by `build_card`; the factual tables come from
 the checkpoint's `trainer_state.json` and the eval JSON. The curated TL;DR, codebook row,
 and loading snippet are part of `build_card` and upload automatically; `docs/model-card.md`
-mirrors the rendered output.
+mirrors the rendered output. The card is mode-aware: `mode: ntp` renders the
+Tessera-1B-Nano-Base control-arm card.
 
 - [ ] Optional: merge the curated sections (TL;DR, intervention reading, limitations) into
       the card. Two ways:
@@ -67,7 +71,12 @@ mirrors the rendered output.
 - [x] The loading snippet is filled automatically: `build_card` renders the `REPO_ID`
   placeholder with the repo id passed to `publish`.
 
-## 4. Publish (remote, reads the volume)
+## 4. Publish (remote, reads the volume; executed 2026-09-29)
+
+Durable-call note: `modal run` against this function can outlive the local CLI timeout;
+spawn it instead (`Function.from_name("ncp-smol-publish", "publish_checkpoint").spawn(...)`)
+and poll with `modal_submit.py status <call-id>` (the published NCP call was
+`fc-01M3N4NMVBSANXJZB5TDWFDD8M`, the baseline `fc-01M3N4NXYZ6VDS2DM6GWXHB28J`).
 
 ```powershell
 $env:PYTHONIOENCODING = "utf-8"
@@ -86,11 +95,12 @@ $env:PYTHONIOENCODING = "utf-8"
   "secret huggingface not found".
 - Expected stdout: `https://huggingface.co/Paragon-Intelligence-Labs/Tessera-1B-Nano`.
 
-## 5. Verify after upload
+## 5. Verify after upload (verified)
 
-- [ ] Files tab shows `README.md` (the card), `eval.json`, `metrics.jsonl`,
+- [x] Files tab shows `README.md` (the card), `eval.json`, `metrics.jsonl`,
       `experiment.json`, `data_metadata.json`, safetensors, tokenizer files, and **no**
-      `optimizer.pt`.
+      `optimizer.pt`. The NCP repo additionally carries `modeling.py`, `quantizer.py`,
+      and `configuration.py` for `trust_remote_code` loading.
 - [ ] Model card renders the YAML frontmatter (tags, `base_model` link,
       `pipeline_tag: text-generation`).
 - [ ] Loading snippet works from a clean environment:
@@ -104,7 +114,8 @@ $env:PYTHONIOENCODING = "utf-8"
 - [ ] Spot-check the card numbers against `results/fineweb-edu/README.md`: NTP loss
       2.5142, zero-delta +0.1050, shuffle-delta +0.0008, 999,948,288 tokens, $30.27.
 
-## 6. After publishing
+## 6. After publishing (pending)
+
 
 - [ ] Flip posts' `<link>` placeholders in `docs/posts.md` to the real repo URL and
       unfork the X/Reddit/RU posts for actual posting.- [ ] If you used a namespace other than `Paragon-Intelligence-Labs`, update the root

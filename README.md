@@ -30,6 +30,11 @@ The full verdict is in [results/fineweb-edu](results/fineweb-edu/README.md), wit
 records in [results/fineweb-edu-ntp](results/fineweb-edu-ntp/README.md) and
 [results/fineweb-edu-ncp](results/fineweb-edu-ncp/README.md).
 
+Both checkpoints are published: the NCP arm as
+[Tessera-1B-Nano](https://huggingface.co/yava-code/Tessera-1B-Nano) and the NTP-only
+baseline as [Tessera-1B-Nano-Base](https://huggingface.co/yava-code/Tessera-1B-Nano-Base),
+each with its generated model card, eval JSON, and metric log (no optimizer state).
+
 Publication materials built from that record: the whitepaper
 ([docs/whitepaper.md](docs/whitepaper.md)), post drafts for X, Reddit/HN, and a Russian-language
 short post ([docs/posts.md](docs/posts.md)), and the Hugging Face model card draft
@@ -153,7 +158,7 @@ After evaluation, build the checkpoint card locally before uploading:
 $checkpoint = (Get-Content runs\fineweb-edu-ncp\latest.json | ConvertFrom-Json).checkpoint
 .venv\Scripts\ncp-smol-publish configs\fineweb-edu-ncp.yaml `
   "runs\fineweb-edu-ncp\$checkpoint" artifacts\fineweb-edu-ncp-eval.json `
-  Paragon-Intelligence-Labs/Tessera-1B-Nano --dry-run
+  yava-code/Tessera-1B-Nano --dry-run
 ```
 
 Remove `--dry-run` only after reviewing the generated card. Optimizer state is kept locally
@@ -168,7 +173,7 @@ For checkpoints that remain on the Modal volume, evaluation and publication can 
 .venv\Scripts\modal.exe run modal_publish.py::publish --config fineweb-edu-ncp.yaml `
   --checkpoint latest `
   --eval-json /vol/artifacts/fineweb-edu-ncp-eval.json `
-  --repo-id Paragon-Intelligence-Labs/Tessera-1B-Nano
+  --repo-id yava-code/Tessera-1B-Nano
 ```
 
 Remote publication expects a Modal secret named `huggingface` with the `HF_TOKEN` key. Create

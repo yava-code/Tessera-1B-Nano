@@ -2,9 +2,12 @@
 
 The card below is what `src/ncp_smol/publish.py::build_card` generates for the final
 checkpoint and eval artifact; this document mirrors it with the concrete numbers so the
-uploaded card and the docs agree. The repo id flows in through the `REPO_ID` placeholder
-at publish time, so no manual replacement is needed. Upload stays gated on the Modal
-`huggingface` secret (`HF_TOKEN`); the procedure is
+uploaded card and the docs agree. The card is mode-aware: `mode: ntp` renders a control-arm
+card titled Tessera-1B-Nano-Base (published at
+[yava-code/Tessera-1B-Nano-Base](https://huggingface.co/yava-code/Tessera-1B-Nano-Base));
+the concept arm is published at
+[yava-code/Tessera-1B-Nano](https://huggingface.co/yava-code/Tessera-1B-Nano). Upload stays
+gated on the Modal `huggingface` secret (`HF_TOKEN`); the procedure is
 [docs/publishing-checklist.md](docs/publishing-checklist.md).
 
 ---
@@ -28,22 +31,25 @@ license: apache-2.0
 A Next Concept Prediction checkpoint from Paragon Intelligence Labs: an independent,
 small-scale replication of ConceptLM on `HuggingFaceTB/SmolLM2-360M`. The model keeps
 ordinary next-token generation and adds a causal, product-quantized concept path over
-4-token chunks: token states are pooled into concepts, product-quantized, processed by
-causal concept blocks, and the predicted next concept is fed back into the token decoder.
+4-token chunks: token states are pooled into concepts,
+product-quantized, processed by causal concept blocks, and the predicted next concept
+is fed back into the token decoder.
 
 ## TL;DR
 
 This checkpoint comes from a token-matched comparison against the unchanged
-HuggingFaceTB/SmolLM2-360M backbone: both arms consumed the same tokens of the same packed
-corpus, in the same order, from the same initialization, with no restarts and no NaNs.
+HuggingFaceTB/SmolLM2-360M backbone: both arms consumed the same tokens of the
+same packed corpus, in the same order, from the same initialization, with no
+restarts and no NaNs.
 
-- **Token loss is neutral**: the matched baseline is within run noise (see the whitepaper
-  and `results/fineweb-edu/README.md` in the ncp-smol repository for the exact numbers).
+- **Token loss is neutral**: the matched baseline is within run noise (see the
+  whitepaper and `results/fineweb-edu/README.md` in the ncp-smol repository for
+  the exact numbers).
 - **The concept channel is causally used**: zeroing predicted concept feedback
   at inference costs +0.1050 nats of held-out NTP loss.
-- **The codebook is rich**: no low-entropy shortcut, usage grows monotonically over the
-  run (growth curves are in the repository whitepaper).
-- Full reading of the interventions: `docs/whitepaper.md` in the ncp-smol repository.
+- **The codebook is rich**: no low-entropy shortcut, usage grows monotonically
+  over the run (growth curves are in the repository whitepaper).
+- Full reading of the interventions: `docs/whitepaper.md` in the ncp-smol repo.
 
 ## Evaluation
 
