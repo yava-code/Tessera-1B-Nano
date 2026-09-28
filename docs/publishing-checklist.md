@@ -19,7 +19,7 @@ explicit. Windows notes: run modal commands with `PYTHONIOENCODING=utf-8`, pytho
 
 Checkpoint contents that `publish()` uploads: everything in the checkpoint directory
 except `optimizer.pt` (excluded by `ignore_patterns`). That is the model, tokenizer,
-`eval.json`, `metrics.jsonl`, and provenance JSONs — a complete, self-contained repo.
+`eval.json`, `metrics.jsonl`, and provenance JSONs, a complete self-contained repo.
 
 ## 1. Create the Modal `huggingface` secret (manual, one-time)
 
@@ -44,17 +44,19 @@ except `optimizer.pt` (excluded by `ignore_patterns`). That is the model, tokeni
 
 ## 2. Decide repo id and visibility
 
-- Default assumed in the docs: `USERNAME/ncp-smol-360m`. Replace `USERNAME` with the HF
-  account that owns the token.
+- Repo id used throughout: `Paragon-Intelligence-Labs/Tessera-1B-Nano`. The token's HF
+  account must own the `Paragon-Intelligence-Labs` namespace; if it does not, use your own
+  namespace instead and update the snippets.
 - Repo starts public by default; add `--private` for a first private upload and flip it
   in the HF UI later. `publish()` calls `create_repo(..., exist_ok=True)`, so a retry is
   safe and re-uploads over the same repo.
 
 ## 3. Review the card one last time
 
-The uploaded card is generated remotely by `build_card` — the factual tables come from
-the checkpoint's `trainer_state.json` and the eval JSON, not from the docs drafts. The
-curated narrative in `docs/model-card.md` is *not* uploaded automatically.
+The uploaded card is generated remotely by `build_card`; the factual tables come from
+the checkpoint's `trainer_state.json` and the eval JSON. The curated TL;DR, codebook row,
+and loading snippet are part of `build_card` and upload automatically; `docs/model-card.md`
+mirrors the rendered output.
 
 - [ ] Optional: merge the curated sections (TL;DR, intervention reading, limitations) into
       the card. Two ways:
@@ -62,9 +64,8 @@ curated narrative in `docs/model-card.md` is *not* uploaded automatically.
         reproducible); or
       - Upload first, then replace the README in the repo via the HF UI or
         `huggingface_hub.upload_file(..., path_in_repo="README.md")`.
-- [ ] Replace `USERNAME` in the loading snippet either way (`build_card` renders the
-      literal repo id passed to `publish`, so step 4 fixes this automatically if the
-      template keeps `REPO_ID`).
+- [x] The loading snippet is filled automatically: `build_card` renders the `REPO_ID`
+  placeholder with the repo id passed to `publish`.
 
 ## 4. Publish (remote, reads the volume)
 
@@ -75,7 +76,7 @@ $env:PYTHONIOENCODING = "utf-8"
   --config fineweb-edu-ncp.yaml `
   --checkpoint latest `
   --eval-json /vol/artifacts/fineweb-edu-ncp-eval.json `
-  --repo-id USERNAME/ncp-smol-360m
+  --repo-id Paragon-Intelligence-Labs/Tessera-1B-Nano
 ```
 
 - `--checkpoint latest` resolves through `runs/fineweb-edu-ncp/latest.json` on the volume
@@ -83,12 +84,12 @@ $env:PYTHONIOENCODING = "utf-8"
 - Git Bash note: prefix the command with `MSYS_NO_PATHCONV=1` so `/vol/...` survives.
 - The function needs the secret (step 1) or image creation fails with
   "secret huggingface not found".
-- Expected stdout: `https://huggingface.co/USERNAME/ncp-smol-360m`.
+- Expected stdout: `https://huggingface.co/Paragon-Intelligence-Labs/Tessera-1B-Nano`.
 
 ## 5. Verify after upload
 
 - [ ] Files tab shows `README.md` (the card), `eval.json`, `metrics.jsonl`,
-      `experiment.json`, `data_metadata.json`, safetensors, tokenizer files — and **no**
+      `experiment.json`, `data_metadata.json`, safetensors, tokenizer files, and **no**
       `optimizer.pt`.
 - [ ] Model card renders the YAML frontmatter (tags, `base_model` link,
       `pipeline_tag: text-generation`).
@@ -97,30 +98,26 @@ $env:PYTHONIOENCODING = "utf-8"
       ```python
       from transformers import AutoModelForCausalLM, AutoTokenizer
 
-      tok = AutoTokenizer.from_pretrained("USERNAME/ncp-smol-360m")
-      model = AutoModelForCausalLM.from_pretrained("USERNAME/ncp-smol-360m")
+      tok = AutoTokenizer.from_pretrained("Paragon-Intelligence-Labs/Tessera-1B-Nano")
+      model = AutoModelForCausalLM.from_pretrained("Paragon-Intelligence-Labs/Tessera-1B-Nano")
       ```
-
-      (`trust_remote_code` in the generated snippet is harmless but unnecessary — the
-      checkpoint is plain transformers + safetensors.)
 - [ ] Spot-check the card numbers against `results/fineweb-edu/README.md`: NTP loss
       2.5142, zero-delta +0.1050, shuffle-delta +0.0008, 999,948,288 tokens, $30.27.
 
 ## 6. After publishing
 
 - [ ] Flip posts' `<link>` placeholders in `docs/posts.md` to the real repo URL and
-      unfork the X/Reddit/RU posts for actual posting.
-- [ ] Update the root `README.md` publish snippets if the repo id changed from
-      `USERNAME/ncp-smol-360m`.
+      unfork the X/Reddit/RU posts for actual posting.- [ ] If you used a namespace other than `Paragon-Intelligence-Labs`, update the root
+  `README.md` publish snippets to match.
 - [ ] Keep `results/` as the source of truth; the HF repo is a mirror of the checkpoint,
       not the record.
 
 ## Failure handling
 
-- **Secret error at deploy/run time**: `Secret 'huggingface' not found` — create it
+- **Secret error at deploy/run time**: `Secret 'huggingface' not found`: create it
   (step 1) and rerun; no code change needed.
 - **401/403 from HF**: token lacks write scope or the repo id belongs to another
-  namespace — regenerate the token, recreate the secret, rerun.
+  namespace: regenerate the token, recreate the secret, rerun.
 - **Interrupted upload**: `publish()` is idempotent (`exist_ok=True`, full-folder
   upload); rerun the same command.
 - **Wrong card content**: fix `build_card` or the checkpoint artifacts, redeploy

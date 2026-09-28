@@ -4,6 +4,9 @@ Use a claim only after the public repository, checkpoint, and matched comparison
 The FineWeb-Edu matched comparison is complete; these claims are written against its
 recorded artifacts (results/fineweb-edu and per-arm READMEs), not extrapolations.
 
+Naming: the released checkpoint is Tessera-1B-Nano by Paragon Intelligence Labs; the
+claims below use that name for the NTP+NCP arm. The internal project id stays ncp-smol.
+
 ## Calm
 
 1. **Ran a token-matched FineWeb-Edu comparison of NTP-only versus NTP+NCP on
@@ -28,5 +31,6 @@ recorded artifacts (results/fineweb-edu and per-arm READMEs), not extrapolations
 
 ## Short
 
-5. **Reproduced NCP at 360M: a used, rich, but sequence-generic concept channel — and an
-   honest neutral verdict at 1B tokens, with the next probes stated in advance.**
+5. **Reproduced NCP at 360M and released it as Tessera-1B-Nano: a used, rich, but
+   sequence-generic concept channel, an honest neutral verdict at 1B tokens, and the next
+   probes stated in advance.**

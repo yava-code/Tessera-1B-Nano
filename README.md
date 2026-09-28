@@ -2,6 +2,9 @@
 
 Small-scale, independent reproduction of Next Concept Prediction on SmolLM2.
 
+The trained checkpoint is released as **Tessera-1B-Nano** by **Paragon Intelligence
+Labs**; `ncp-smol` is the internal project id.
+
 `ncp-smol` keeps token-level autoregressive generation, but adds a thin latent path. Every
 four token states are pooled into a concept, product-quantized, passed through a causal
 concept module, and used to predict the next concept. The predicted concept is then added
@@ -20,18 +23,18 @@ was stopped after 614k tokens rather than presenting a vacuous auxiliary loss as
 The shared FineWeb-Edu cache was prepared and hashed: 1.0B train tokens and 10M held-out
 tokens, read identically by both arms. The matched comparison is complete: both arms
 consumed exactly 999,948,288 tokens. Final held-out NTP loss is 2.5135 for NTP-only and
-2.5142 for NTP+NCP — neutral within run noise. The concept path is demonstrably used
+2.5142 for NTP+NCP, neutral within run noise. The concept path is demonstrably used
 (zeroing feedback costs +0.105 NTP loss) and learns a rich codebook (perplexity 7.55), but
 its benefit is sequence-generic: shuffled feedback works as well as the sequence's own.
 The full verdict is in [results/fineweb-edu](results/fineweb-edu/README.md), with per-arm
 records in [results/fineweb-edu-ntp](results/fineweb-edu-ntp/README.md) and
 [results/fineweb-edu-ncp](results/fineweb-edu-ncp/README.md).
 
-Publication materials built from that record: the paper draft
-([docs/paper.md](docs/paper.md)), post drafts for X, Reddit/HN, and a Russian-language
+Publication materials built from that record: the whitepaper
+([docs/whitepaper.md](docs/whitepaper.md)), post drafts for X, Reddit/HN, and a Russian-language
 short post ([docs/posts.md](docs/posts.md)), and the Hugging Face model card draft
-([docs/model-card.md](docs/model-card.md)). The step-by-step publication procedure —
-creating the Modal `huggingface` secret and running the remote publish — is
+([docs/model-card.md](docs/model-card.md)). The step-by-step publication procedure,
+creating the Modal `huggingface` secret and running the remote publish, is
 [docs/publishing-checklist.md](docs/publishing-checklist.md).
 
 This repository is built for one controlled question: does the ConceptLM objective produce
@@ -150,7 +153,7 @@ After evaluation, build the checkpoint card locally before uploading:
 $checkpoint = (Get-Content runs\fineweb-edu-ncp\latest.json | ConvertFrom-Json).checkpoint
 .venv\Scripts\ncp-smol-publish configs\fineweb-edu-ncp.yaml `
   "runs\fineweb-edu-ncp\$checkpoint" artifacts\fineweb-edu-ncp-eval.json `
-  USERNAME/ncp-smol-360m --dry-run
+  Paragon-Intelligence-Labs/Tessera-1B-Nano --dry-run
 ```
 
 Remove `--dry-run` only after reviewing the generated card. Optimizer state is kept locally
@@ -165,7 +168,7 @@ For checkpoints that remain on the Modal volume, evaluation and publication can 
 .venv\Scripts\modal.exe run modal_publish.py::publish --config fineweb-edu-ncp.yaml `
   --checkpoint latest `
   --eval-json /vol/artifacts/fineweb-edu-ncp-eval.json `
-  --repo-id USERNAME/ncp-smol-360m
+  --repo-id Paragon-Intelligence-Labs/Tessera-1B-Nano
 ```
 
 Remote publication expects a Modal secret named `huggingface` with the `HF_TOKEN` key. Create

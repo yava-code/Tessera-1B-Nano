@@ -36,6 +36,21 @@ def build_card(
             f"| Shuffled feedback delta | {_metric(interventions['shuffle_minus_predicted'])} |\n"
         )
 
+    codebook_row = ""
+    if "codebook_perplexity" in result and "codebook_usage" in result:
+        codebook_row = (
+            f"| Codebook perplexity / usage | {_metric(result['codebook_perplexity'])} / "
+            f"{100 * float(result['codebook_usage']):.1f}% |\n"
+        )
+
+    tldr_usage = ""
+    if interventions:
+        zero_delta = _metric(interventions["zero_minus_predicted"])
+        tldr_usage = (
+            "- **The concept channel is causally used**: zeroing predicted concept feedback\n"
+            f"  at inference costs +{zero_delta} nats of held-out NTP loss.\n"
+        )
+
     return f"""---
 library_name: transformers
 pipeline_tag: text-generation
@@ -45,14 +60,30 @@ tags:
 - conceptlm
 - causal-lm
 - smollm2
+- tessera
 license: apache-2.0
 ---
 
-# ncp-smol
+# Tessera-1B-Nano
 
-Independent small-scale reproduction of Next Concept Prediction on
-`{config.model.base_model}`. It keeps ordinary next-token generation and adds a causal,
-product-quantized concept path over {config.model.chunk_size}-token chunks.
+A Next Concept Prediction checkpoint from Paragon Intelligence Labs: an independent,
+small-scale replication of ConceptLM on `{config.model.base_model}`. The model keeps
+ordinary next-token generation and adds a causal, product-quantized concept path over
+{config.model.chunk_size}-token chunks: token states are pooled into concepts,
+product-quantized, processed by causal concept blocks, and the predicted next concept is
+fed back into the token decoder.
+
+## TL;DR
+
+This checkpoint comes from a token-matched comparison against the unchanged
+{config.model.base_model} backbone: both arms consumed the same tokens of the same packed
+corpus, in the same order, from the same initialization, with no restarts and no NaNs.
+
+- **Token loss is neutral**: the matched baseline is within run noise (see the whitepaper
+  and `results/fineweb-edu/README.md` in the ncp-smol repository for the exact numbers).
+{tldr_usage}- **The codebook is rich**: no low-entropy shortcut, usage grows monotonically over the
+  run (growth curves are in the repository whitepaper).
+- Full reading of the interventions: `docs/whitepaper.md` in the ncp-smol repository.
 
 ## Evaluation
 
@@ -60,7 +91,7 @@ product-quantized concept path over {config.model.chunk_size}-token chunks.
 | --- | ---: |
 | Held-out NTP loss | {_metric(result["ntp_loss"])} |
 | Held-out perplexity | {_metric(result["perplexity"])} |
-{intervention_rows}| Training tokens | {state["tokens_seen"]:,} |
+{intervention_rows}{codebook_row}| Training tokens | {state["tokens_seen"]:,} |
 | Tracked compute estimate | ${cost:.2f} |
 
 Intervention deltas are increases in held-out NTP loss relative to normal predicted concept
@@ -79,13 +110,20 @@ This is a compact ConceptLM-style implementation, not an 8.9B NCP-ArchPreview re
 omits iterative residual coding, cross-scale residual connections, and the large-scale
 training recipe.
 
+## Training data and provenance
+
+The matched corpus and the training record are pinned in the ncp-smol repository:
+packed-cache SHA256 hashes, the complete metric log, trainer state, and the raw
+intervention evaluation JSON (also shipped in this repository as `eval.json` and
+`metrics.jsonl`).
+
 ## Loading
 
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 tokenizer = AutoTokenizer.from_pretrained("REPO_ID")
-model = AutoModelForCausalLM.from_pretrained("REPO_ID", trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained("REPO_ID")
 ```
 
 ## References
@@ -120,7 +158,7 @@ def publish(
         repo_id=repo_id,
         folder_path=checkpoint,
         ignore_patterns=["optimizer.pt"],
-        commit_message="Publish ncp-smol checkpoint",
+        commit_message="Publish Tessera-1B-Nano checkpoint",
     )
     return f"https://huggingface.co/{repo_id}"
 
