@@ -3,6 +3,11 @@ from __future__ import annotations
 import functools
 from typing import Any
 
+try:  # must precede torch/transformers imports: it patches CUDA allocation
+    import spaces
+except ImportError:  # pragma: no cover - local run
+    spaces = None
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -27,14 +32,11 @@ INTRO_NOTE = (
 MODELS: dict[str, tuple[AutoTokenizer, Any]] = {}
 
 
-def _torch_dtype() -> torch.dtype:
-    return torch.bfloat16 if torch.cuda.is_available() else torch.float32
-
-
-def load_models() -> None:
+def load_models(*, gpu_dtype: bool = False) -> None:
+    """Load both checkpoints on CPU; gpu_dtype selects bf16 for the ZeroGPU move."""
     if MODELS:
         return
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    dtype = torch.bfloat16 if gpu_dtype else torch.float32
     for key, repo, trust in (
         ("base", BASELINE_REPO, False),
         ("concept", CONCEPT_REPO, True),
@@ -43,39 +45,17 @@ def load_models() -> None:
         model = AutoModelForCausalLM.from_pretrained(
             repo,
             trust_remote_code=trust,
-            dtype=_torch_dtype(),
-        ).to(device)
+            dtype=dtype,
+        )
         model.eval()
         MODELS[key] = (tokenizer, model)
 
 
-def prompt_ntp_loss(
-    tokenizer: AutoTokenizer,
-    model: Any,
-    prompt: str,
-    *,
-    zero_feedback: bool = False,
-) -> float:
-    """Teacher-forced next-token loss of the prompt (the metric the study reports)."""
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    with torch.no_grad():
-        outputs = (
-            model(**inputs, concept_mode="zero")
-            if zero_feedback
-            else model(**inputs)
-        )
-    logits = outputs.logits[:, :-1, :]
-    targets = inputs["input_ids"][:, 1:]
-    return float(
-        torch.nn.functional.cross_entropy(
-            logits.reshape(-1, logits.size(-1)),
-            targets.reshape(-1),
-            reduction="mean",
-        )
-    )
+def _device(model: Any) -> torch.device:
+    return next(model.parameters()).device
 
 
-def generate(
+def _generate(
     tokenizer: AutoTokenizer,
     model: Any,
     prompt: str,
@@ -83,7 +63,7 @@ def generate(
     *,
     zero_feedback: bool = False,
 ) -> str:
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    inputs = tokenizer(prompt, return_tensors="pt").to(_device(model))
     if zero_feedback:
         # generate() rejects unknown kwargs, so route concept_mode through forward.
         model.forward = functools.partial(model.forward, concept_mode="zero")
@@ -106,26 +86,42 @@ def generate(
     )
 
 
-def run_comparison(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+def _prompt_loss(
+    tokenizer: AutoTokenizer,
+    model: Any,
+    prompt: str,
+    *,
+    zero_feedback: bool = False,
+) -> float:
+    inputs = tokenizer(prompt, return_tensors="pt").to(_device(model))
+    with torch.no_grad():
+        outputs = model(**inputs, concept_mode="zero") if zero_feedback else model(**inputs)
+    logits = outputs.logits[:, :-1, :]
+    targets = inputs["input_ids"][:, 1:]
+    return float(
+        torch.nn.functional.cross_entropy(
+            logits.reshape(-1, logits.size(-1)),
+            targets.reshape(-1),
+            reduction="mean",
+        )
+    )
+
+
+def _run(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+    if set(MODELS) != {"base", "concept"}:
+        raise RuntimeError("Models are still loading; retry in a minute.")
     prompt = prompt.strip() or EXAMPLE_PROMPTS[0]
     max_new_tokens = max(16, min(int(max_new_tokens), MAX_NEW_TOKENS_LIMIT))
-    load_models()
     base_tok, base_model = MODELS["base"]
     concept_tok, concept_model = MODELS["concept"]
 
-    base_text = generate(base_tok, base_model, prompt, max_new_tokens)
-    concept_text = generate(concept_tok, concept_model, prompt, max_new_tokens)
-    zero_text = generate(
-        concept_tok,
-        concept_model,
-        prompt,
-        max_new_tokens,
-        zero_feedback=True,
-    )
+    base_text = _generate(base_tok, base_model, prompt, max_new_tokens)
+    concept_text = _generate(concept_tok, concept_model, prompt, max_new_tokens)
+    zero_text = _generate(concept_tok, concept_model, prompt, max_new_tokens, zero_feedback=True)
 
-    base_loss = prompt_ntp_loss(base_tok, base_model, prompt)
-    concept_loss = prompt_ntp_loss(concept_tok, concept_model, prompt)
-    zero_loss = prompt_ntp_loss(concept_tok, concept_model, prompt, zero_feedback=True)
+    base_loss = _prompt_loss(base_tok, base_model, prompt)
+    concept_loss = _prompt_loss(concept_tok, concept_model, prompt)
+    zero_loss = _prompt_loss(concept_tok, concept_model, prompt, zero_feedback=True)
     delta = zero_loss - concept_loss
 
     base_note = f"teacher-forced NTP loss on the prompt: {base_loss:.3f}"
@@ -134,3 +130,28 @@ def run_comparison(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str
         f" feedback costs {delta:+.3f} nats here (held-out average: +0.105)"
     )
     return base_text, base_note, concept_text, zero_text, concept_note
+
+
+if spaces is not None:  # ZeroGPU: models live on CPU, compute moves to a shared A100
+
+    @spaces.GPU(duration=45)
+    def _gpu_run(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+        # Only the device move and the math run inside the GPU window: downloads and
+        # CPU loading stay in the main process, or ZeroGPU kills the call on timeout.
+        for _, model in MODELS.values():
+            if next(model.parameters()).device.type != "cuda":
+                model.to("cuda")
+        return _run(prompt, max_new_tokens)
+
+    def run_comparison(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+        load_models(gpu_dtype=True)
+        return _gpu_run(prompt, max_new_tokens)
+
+else:  # local: plain cpu/cuda execution
+
+    def run_comparison(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+        load_models()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        for _, model in MODELS.values():
+            model.to(device)
+        return _run(prompt, max_new_tokens)

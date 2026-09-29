@@ -147,6 +147,25 @@ the published HF weights on all 256 held-out blocks of the volume validation spl
 rounding), and the zero-feedback delta **+0.1050** reproduces the committed number
 exactly. The published checkpoints are the trained ones, end to end.
 
+## 5d. Demo Space (2026-09-29, live)
+
+[Space: yava-code/tessera-comparison](https://huggingface.co/spaces/yava-code/tessera-comparison)
+runs on **ZeroGPU** (free; Gradio on cpu-basic now requires PRO, so the Space was created
+with `space_hardware='zero-a10g'`). Verified end to end in a browser: prompt -> three
+generations (baseline, predicted feedback, zeroed feedback) -> teacher-forced loss readout
+(4.25 to 4.28 nats on the demo prompt, models load correctly).
+
+ZeroGPU-specific lessons baked into the bundle (`space/`):
+
+- models load at startup on CPU, outside the `@spaces.GPU` window (a worker forks per
+  request and must never see half-loaded state); only the device move and math run in the
+  45 s GPU window;
+- the Space image pins gradio 6.28 (requirements cannot downgrade it) and ships
+  transformers v5, so the model repos carry a `tie_weights` cross-version fix and the
+  loading snippet needs `trust_remote_code=True`;
+- free-tier ZeroGPU quota is small and per-account: a failed 180 s request burns the
+  window, so the app requests 45 s.
+
 ## 6. After publishing
 
 - [x] Code is public: the repository is pushed to

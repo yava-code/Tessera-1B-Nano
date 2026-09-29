@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import comparison
 import gradio as gr
 from comparison import (
     BASELINE_REPO,
@@ -10,6 +11,21 @@ from comparison import (
     MAX_NEW_TOKENS_LIMIT,
     run_comparison,
 )
+
+# Load both checkpoints at startup, outside any ZeroGPU window: the GPU worker forks
+# from this process per request and must always see fully loaded models.
+comparison.load_models(gpu_dtype=True)
+
+
+def handler(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+    try:
+        return run_comparison(prompt, max_new_tokens)
+    except Exception as error:  # surface the real failure inside the UI
+        import traceback
+
+        message = f"{type(error).__name__}: {error}\n{traceback.format_exc()[-800:]}"
+        return "", f"ERROR: {message}", "", "", message
+
 
 with gr.Blocks(title="Tessera-1B-Nano comparison") as demo:
     gr.Markdown(
@@ -61,12 +77,12 @@ with gr.Blocks(title="Tessera-1B-Nano comparison") as demo:
     )
 
     run_button.click(
-        run_comparison,
+        handler,
         inputs=[prompt_box, max_new_tokens_slider],
         outputs=[base_output, base_loss_note, concept_output, zero_output, concept_loss_note],
     )
     prompt_box.submit(
-        run_comparison,
+        handler,
         inputs=[prompt_box, max_new_tokens_slider],
         outputs=[base_output, base_loss_note, concept_output, zero_output, concept_loss_note],
     )

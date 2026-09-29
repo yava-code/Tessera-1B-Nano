@@ -126,7 +126,9 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
     def set_output_embeddings(self, value: nn.Module) -> None:
         self.backbone.set_output_embeddings(value)
 
-    def tie_weights(self) -> None:
+    def tie_weights(self, *args: Any, **kwargs: Any) -> None:
+        # transformers >= 5 calls tie_weights(recompute_mapping=...) during post-init;
+        # swallow the extra arguments for cross-version compatibility.
         self.backbone.tie_weights()
 
     def _concept_mask(self, valid: Tensor, dtype: torch.dtype) -> Tensor:
