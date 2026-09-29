@@ -15,6 +15,29 @@ def _metric(value: float) -> str:
     return f"{value:.4f}"
 
 
+FAMILY_MEMBERS = (
+    ("Tessera-135M-Gate", "135M architecture gate (overfit, published for the scale story)"),
+    ("Tessera-1B-Nano-Base", "1B-token matched NTP-only control"),
+    ("Tessera-1B-Nano", "1B-token matched concept arm"),
+)
+
+
+def _family_section(this_title: str) -> str:
+    rows = "\n".join(
+        f"- [{name}](https://huggingface.co/yava-code/{name}) - {role}"
+        + (" **(this model)**" if name == this_title else "")
+        for name, role in FAMILY_MEMBERS
+    )
+    return (
+        "## The Tessera family\n\n"
+        "Three checkpoints, one story, in reading order:\n\n"
+        f"{rows}\n\n"
+        "All cards are generated from the run artifacts by the same `build_card`; the\n"
+        "[study repository](https://github.com/yava-code/Tessera-1B-Nano) holds the\n"
+        "whitepaper and full records.\n"
+    )
+
+
 def _card_title(config: ExperimentConfig) -> str:
     if config.run.mode == "ntp":
         return "Tessera-1B-Nano-Base"
@@ -193,7 +216,7 @@ intervention evaluation JSON (also shipped in this repository as `eval.json` and
 
 {_loading_snippet(config)}
 
-## References
+{_family_section(title)}## References
 
 - Code and study: https://github.com/yava-code/Tessera-1B-Nano
 - ConceptLM: https://arxiv.org/abs/2602.08984

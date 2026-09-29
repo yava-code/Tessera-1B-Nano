@@ -66,6 +66,9 @@ optim:
     assert "Paragon Intelligence Labs" in card
     assert 'AutoModelForCausalLM.from_pretrained("REPO_ID", trust_remote_code=True)' in card
     assert "costs +0.1000 nats" in card
+    assert "## The Tessera family" in card
+    assert "(this model)**" in card
+    assert card.count("https://huggingface.co/yava-code/Tessera") == 3
 
 
 def test_model_card_includes_codebook_row(tmp_path: Path) -> None:
@@ -192,6 +195,8 @@ optim:
     assert "overfit" in card
     assert "costs +0.0280 nats" in card
     assert "Codebook perplexity / usage | 2.4300 / 40.6%" in card
+    assert "## The Tessera family" in card
+    assert "(this model)**" in card
 
 
 def test_model_card_baseline_branch(tmp_path: Path) -> None:
@@ -247,3 +252,5 @@ optim:
     assert "Zero feedback delta" not in card
     assert "AutoModelForCausalLM.from_pretrained(\"REPO_ID\")" in card
     assert "trust_remote_code" not in card
+    assert "## The Tessera family" in card
+    assert "(this model)**" in card

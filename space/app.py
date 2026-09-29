@@ -82,8 +82,11 @@ with gr.Blocks(title="Tessera-1B-Nano comparison") as demo:
         "  prompt, so it shows the intervention penalty directly instead of relying on\n"
         "  sampled text to diverge.\n\n"
         f"Checkpoints: [{CONCEPT_REPO}](https://huggingface.co/{CONCEPT_REPO}),\n"
-        f"[{BASELINE_REPO}](https://huggingface.co/{BASELINE_REPO}). Study and whitepaper:\n"
-        "the [Tessera-1B-Nano repository](https://github.com/yava-code/Tessera-1B-Nano)."
+        f"[{BASELINE_REPO}](https://huggingface.co/{BASELINE_REPO}). The whole family (the\n"
+        "135M gate, both 1B arms) lives in [this\n"
+        "collection](https://huggingface.co/collections/yava-code/tessera-next-concept-prediction-gated-and-scaled-6abc3b7ad9177be38bcb3ff4).\n"
+        "Study and whitepaper: the\n"
+        "[Tessera-1B-Nano repository](https://github.com/yava-code/Tessera-1B-Nano)."
     )
 
     run_button.click(

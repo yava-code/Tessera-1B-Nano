@@ -147,6 +147,17 @@ the published HF weights on all 256 held-out blocks of the volume validation spl
 rounding), and the zero-feedback delta **+0.1050** reproduces the committed number
 exactly. The published checkpoints are the trained ones, end to end.
 
+## 5c-ter. Family linking (2026-09-29, live)
+
+All three model cards carry a generated "The Tessera family" section (FAMILY_MEMBERS in
+`build_card`, this-model marker included; verified by downloading all three READMEs).
+The collection **Tessera: Next Concept Prediction, gated and scaled**
+(huggingface.co/collections/yava-code/tessera-next-concept-prediction-gated-and-scaled-6abc3b7ad9177be38bcb3ff4)
+holds the three models plus the comparison Space with per-item notes. The Space footer
+links the collection. Card uploads used local pseudo-checkpoints assembled from the
+committed results/ mirrors (`artifacts/upload_family_cards.py`): build_card only reads
+trainer_state.json from the checkpoint dir.
+
 ## 5c-bis. Tessera-135M-Gate (2026-09-29, live)
 
 The 135M architecture gate is published alongside the 360M arms for the scale story:
