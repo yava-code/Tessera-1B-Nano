@@ -147,7 +147,13 @@ the published HF weights on all 256 held-out blocks of the volume validation spl
 rounding), and the zero-feedback delta **+0.1050** reproduces the committed number
 exactly. The published checkpoints are the trained ones, end to end.
 
-## 5d. Demo Space (2026-09-29, live)
+## 5d. Demo Space (2026-09-29, live; seed toggle added 2026-09-29 later)
+
+Seed reproducibility: a numeric Seed control (default 7) resets the device-global RNG
+per generation call — transformers 4.x multinomial sampling draws from the global RNG
+(no generator argument), so `torch.Generator` seeding alone does NOT make repeats
+reproducible (verified locally: bit-identical repeats, different text under a different
+seed). Same seed + prompt = bit-identical generations on every click.
 
 [Space: yava-code/tessera-comparison](https://huggingface.co/spaces/yava-code/tessera-comparison)
 runs on **ZeroGPU** (free; Gradio on cpu-basic now requires PRO, so the Space was created

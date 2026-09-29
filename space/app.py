@@ -6,6 +6,7 @@ from comparison import (
     BASELINE_REPO,
     CONCEPT_REPO,
     DEFAULT_MAX_NEW_TOKENS,
+    DEFAULT_SEED,
     EXAMPLE_PROMPTS,
     INTRO_NOTE,
     MAX_NEW_TOKENS_LIMIT,
@@ -17,9 +18,9 @@ from comparison import (
 comparison.load_models(gpu_dtype=True)
 
 
-def handler(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+def handler(prompt: str, max_new_tokens: int, seed: int) -> tuple[str, str, str, str, str]:
     try:
-        return run_comparison(prompt, max_new_tokens)
+        return run_comparison(prompt, max_new_tokens, seed)
     except Exception as error:  # surface the real failure inside the UI
         import traceback
 
@@ -43,6 +44,13 @@ with gr.Blocks(title="Tessera-1B-Nano comparison") as demo:
         step=8,
         label="New tokens per generation",
     )
+    seed_number = gr.Number(
+        value=DEFAULT_SEED,
+        label="Seed (same seed = same generations)",
+        precision=0,
+        minimum=0,
+        maximum=2**31 - 1,
+    )
     run_button = gr.Button("Generate side by side", variant="primary")
     gr.Examples(examples=EXAMPLE_PROMPTS, inputs=[prompt_box])
 
@@ -64,8 +72,10 @@ with gr.Blocks(title="Tessera-1B-Nano comparison") as demo:
 
     gr.Markdown(
         "### Reading the outputs\n\n"
-        "- The two arms write differently because sampling seeds differ, not because one\n"
-        "  is better: their held-out losses differ by +0.03%.\n"
+        "- Same seed and prompt give bit-identical generations on every click; change\n"
+        "  the seed to sample a different draw. The two arms still write differently\n"
+        "  at any seed because sampling differs, not because one is better: their\n"
+        "  held-out losses differ by +0.03%.\n"
         "- The zeroed-feedback column shows what the concept arm writes when its latent\n"
         "  channel is silenced at inference.\n"
         "- The loss readout is the honest signal: it is computed teacher-forced on your\n"
@@ -78,12 +88,12 @@ with gr.Blocks(title="Tessera-1B-Nano comparison") as demo:
 
     run_button.click(
         handler,
-        inputs=[prompt_box, max_new_tokens_slider],
+        inputs=[prompt_box, max_new_tokens_slider, seed_number],
         outputs=[base_output, base_loss_note, concept_output, zero_output, concept_loss_note],
     )
     prompt_box.submit(
         handler,
-        inputs=[prompt_box, max_new_tokens_slider],
+        inputs=[prompt_box, max_new_tokens_slider, seed_number],
         outputs=[base_output, base_loss_note, concept_output, zero_output, concept_loss_note],
     )
 

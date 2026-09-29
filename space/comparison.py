@@ -21,6 +21,7 @@ EXAMPLE_PROMPTS = [
 ]
 DEFAULT_MAX_NEW_TOKENS = 48
 MAX_NEW_TOKENS_LIMIT = 160
+DEFAULT_SEED = 7
 INTRO_NOTE = (
     "The comparison is token-matched: both arms consumed the same billion tokens in the"
     " same order. On held-out data the concept arm matches the baseline's token loss"
@@ -61,12 +62,20 @@ def _generate(
     prompt: str,
     max_new_tokens: int,
     *,
+    seed: int,
     zero_feedback: bool = False,
 ) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(_device(model))
     if zero_feedback:
         # generate() rejects unknown kwargs, so route concept_mode through forward.
         model.forward = functools.partial(model.forward, concept_mode="zero")
+    # transformers 4.x multinomial sampling draws from the global RNG (no generator
+    # argument), so reproducibility needs a device-global seed reset per call.
+    device = _device(model)
+    if device.type == "cuda":
+        torch.cuda.manual_seed(seed)
+    else:
+        torch.manual_seed(seed)
     try:
         with torch.no_grad():
             outputs = model.generate(
@@ -107,17 +116,27 @@ def _prompt_loss(
     )
 
 
-def _run(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+def _run(prompt: str, max_new_tokens: int, seed: int) -> tuple[str, str, str, str, str]:
     if set(MODELS) != {"base", "concept"}:
         raise RuntimeError("Models are still loading; retry in a minute.")
     prompt = prompt.strip() or EXAMPLE_PROMPTS[0]
     max_new_tokens = max(16, min(int(max_new_tokens), MAX_NEW_TOKENS_LIMIT))
+    seed = max(0, min(int(seed), 2**31 - 1))
     base_tok, base_model = MODELS["base"]
     concept_tok, concept_model = MODELS["concept"]
 
-    base_text = _generate(base_tok, base_model, prompt, max_new_tokens)
-    concept_text = _generate(concept_tok, concept_model, prompt, max_new_tokens)
-    zero_text = _generate(concept_tok, concept_model, prompt, max_new_tokens, zero_feedback=True)
+    # Identical seeds across the arms make repeats bit-reproducible; per-arm offsets
+    # only decorrelate the columns, they change nothing on a repeated click.
+    base_text = _generate(base_tok, base_model, prompt, max_new_tokens, seed=seed)
+    concept_text = _generate(concept_tok, concept_model, prompt, max_new_tokens, seed=seed + 1)
+    zero_text = _generate(
+        concept_tok,
+        concept_model,
+        prompt,
+        max_new_tokens,
+        seed=seed + 2,
+        zero_feedback=True,
+    )
 
     base_loss = _prompt_loss(base_tok, base_model, prompt)
     concept_loss = _prompt_loss(concept_tok, concept_model, prompt)
@@ -135,23 +154,27 @@ def _run(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
 if spaces is not None:  # ZeroGPU: models live on CPU, compute moves to a shared A100
 
     @spaces.GPU(duration=45)
-    def _gpu_run(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+    def _gpu_run(prompt: str, max_new_tokens: int, seed: int) -> tuple[str, str, str, str, str]:
         # Only the device move and the math run inside the GPU window: downloads and
         # CPU loading stay in the main process, or ZeroGPU kills the call on timeout.
         for _, model in MODELS.values():
             if next(model.parameters()).device.type != "cuda":
                 model.to("cuda")
-        return _run(prompt, max_new_tokens)
+        return _run(prompt, max_new_tokens, seed)
 
-    def run_comparison(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+    def run_comparison(
+        prompt: str, max_new_tokens: int, seed: int
+    ) -> tuple[str, str, str, str, str]:
         load_models(gpu_dtype=True)
-        return _gpu_run(prompt, max_new_tokens)
+        return _gpu_run(prompt, max_new_tokens, seed)
 
 else:  # local: plain cpu/cuda execution
 
-    def run_comparison(prompt: str, max_new_tokens: int) -> tuple[str, str, str, str, str]:
+    def run_comparison(
+        prompt: str, max_new_tokens: int, seed: int
+    ) -> tuple[str, str, str, str, str]:
         load_models()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         for _, model in MODELS.values():
             model.to(device)
-        return _run(prompt, max_new_tokens)
+        return _run(prompt, max_new_tokens, seed)
