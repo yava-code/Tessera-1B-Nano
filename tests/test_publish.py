@@ -64,8 +64,7 @@ optim:
     assert "Tracked compute estimate | $2.74" in card
     assert "# Tessera-1B-Nano" in card
     assert "Paragon Intelligence Labs" in card
-    assert 'AutoModelForCausalLM.from_pretrained("REPO_ID")' in card
-    assert "trust_remote_code" not in card
+    assert 'AutoModelForCausalLM.from_pretrained("REPO_ID", trust_remote_code=True)' in card
     assert "costs +0.1000 nats" in card
 
 
@@ -180,3 +179,4 @@ optim:
     assert "Tessera-1B-Nano" in card
     assert "Zero feedback delta" not in card
     assert "AutoModelForCausalLM.from_pretrained(\"REPO_ID\")" in card
+    assert "trust_remote_code" not in card

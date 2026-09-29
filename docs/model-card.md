@@ -92,7 +92,7 @@ intervention evaluation JSON (also shipped in this repository as `eval.json` and
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 tokenizer = AutoTokenizer.from_pretrained("REPO_ID")
-model = AutoModelForCausalLM.from_pretrained("REPO_ID")
+model = AutoModelForCausalLM.from_pretrained("REPO_ID", trust_remote_code=True)
 ```
 
 ## References

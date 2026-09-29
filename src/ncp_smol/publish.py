@@ -67,6 +67,20 @@ def _tldr(config: ExperimentConfig, interventions: dict[str, Any]) -> str:
     )
 
 
+def _loading_snippet(config: ExperimentConfig) -> str:
+    if config.run.mode == "ntp":
+        call = 'AutoModelForCausalLM.from_pretrained("REPO_ID")'
+    else:
+        call = 'AutoModelForCausalLM.from_pretrained("REPO_ID", trust_remote_code=True)'
+    return (
+        "```python\n"
+        "from transformers import AutoModelForCausalLM, AutoTokenizer\n\n"
+        'tokenizer = AutoTokenizer.from_pretrained("REPO_ID")\n'
+        f"model = {call}\n"
+        "```"
+    )
+
+
 def build_card(
     config_path: str | Path,
     checkpoint: str | Path,
@@ -147,12 +161,7 @@ intervention evaluation JSON (also shipped in this repository as `eval.json` and
 
 ## Loading
 
-```python
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-tokenizer = AutoTokenizer.from_pretrained("REPO_ID")
-model = AutoModelForCausalLM.from_pretrained("REPO_ID")
-```
+{_loading_snippet(config)}
 
 ## References
 

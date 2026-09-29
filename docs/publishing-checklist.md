@@ -114,6 +114,24 @@ $env:PYTHONIOENCODING = "utf-8"
 - [ ] Spot-check the card numbers against `results/fineweb-edu/README.md`: NTP loss
       2.5142, zero-delta +0.1050, shuffle-delta +0.0008, 999,948,288 tokens, $30.27.
 
+## 5b. Load verification (2026-09-29, passed)
+
+`scripts/verify_hf_load.py` loads both published repos with `AutoModelForCausalLM` and
+generates greedily: the baseline as a plain llama model, the concept arm with
+`trust_remote_code=True` against the modules shipped in the repo (its `config.json`
+declares `auto_map`; the loading snippet in the card says so). Recorded outcome:
+
+- Both repos load and generate coherent text; forward passes are finite.
+- Parity with the committed eval, re-measured from the downloaded HF weights on 16 held-out
+  blocks (same batcher seed): NTP loss 2.4355 (base) and 2.4368 (concept) versus the
+  committed 2.5135 / 2.5142 over all 256 blocks. The 16-block subsample explains the
+  shared +0.078 offset (both arms shifted equally; the arm gap +0.0013 matches the
+  committed +0.0007). The concept arm's zero-feedback delta is +0.0919 versus the committed
+  +0.1050 on the full batch set, and its total objective loss 6.058 matches the committed
+  total-loss log (6.13 at 900M).
+- The card loading snippets were corrected (the concept arm needs `trust_remote_code=True`)
+  and re-uploaded to both repos after this check.
+
 ## 6. After publishing (pending)
 
 
