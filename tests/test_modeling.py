@@ -131,3 +131,40 @@ def test_hugging_face_auto_class_roundtrip(tmp_path: Path) -> None:
     loaded = AutoModelForCausalLM.from_pretrained(tmp_path, trust_remote_code=True)
 
     assert loaded.__class__.__name__ == "NcpSmolForCausalLM"
+
+
+def test_quantized_target_with_normalized_codewords_starts_with_real_error() -> None:
+    """H5 prerequisite: the quantized target must define an order-1 initial NCP loss."""
+    torch.manual_seed(19)
+    backbone = LlamaConfig(
+        vocab_size=64,
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=3,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        max_position_embeddings=64,
+        attention_dropout=0.0,
+        pad_token_id=0,
+        bos_token_id=1,
+        eos_token_id=2,
+    )
+    config = NcpSmolConfig(
+        backbone_config=backbone.to_dict(),
+        chunk_size=4,
+        segments=4,
+        codebook_size=8,
+        concept_layers=1,
+        insert_layer=1,
+        ncp_target="quantized",
+        codebook_normalization="variance",
+    )
+    model = NcpSmolForCausalLM(config)
+    input_ids = torch.randint(3, 64, (2, 16))
+
+    output = model(input_ids=input_ids, labels=input_ids)
+
+    assert output.ncp_loss.item() > 1e-3
+    assert torch.isfinite(output.loss)
+    output.loss.backward()
+    assert model.concept_head.weight.grad is not None

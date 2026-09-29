@@ -211,8 +211,10 @@ Ordered by cost and discriminating power:
    (`results/fineweb-edu-ncp/step-00007629-eval-similar.json`).
 1b. ~~**Cross-domain feedback partner probe**~~ Executed: wikipedia partners +0.0016,
    code partners +0.0011 (`docs/probe-cross-domain.md`), ruling out domain gating.
-2. **Quantized-target ablation with normalized codewords** (H5 with its stated
-   prerequisite), token-matched and short, before any second full run.
+2. ~~**Quantized-target ablation with normalized codewords**~~ Executed: with the
+   variance-matching prerequisite satisfied, continuous and quantized targets land
+   within +0.0002 NTP of each other at 16.8M tokens, and the quantized arm shows a
+   slightly larger zero-feedback delta (`results/h5-quantized/README.md`).
 3. **Sequence length 4096 at the same token budget**, testing whether concept-position
    granularity limits usefulness.
 4. **4 to 8B tokens**, the same matched design, approaching the scales where the original

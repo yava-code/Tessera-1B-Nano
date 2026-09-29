@@ -21,6 +21,7 @@ class NcpSmolConfig(PretrainedConfig):
         ncp_target: str = "continuous",
         ncp_weight: float = 1.0,
         vq_weight: float = 1.0,
+        codebook_normalization: str = "none",
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -41,6 +42,8 @@ class NcpSmolConfig(PretrainedConfig):
             raise ValueError("codebook_size must be at least 2")
         if ncp_target not in {"quantized", "continuous"}:
             raise ValueError("ncp_target must be 'quantized' or 'continuous'")
+        if codebook_normalization not in {"none", "variance"}:
+            raise ValueError("codebook_normalization must be 'none' or 'variance'")
 
         self.backbone_config = backbone_config
         self.hidden_size = hidden_size
@@ -59,6 +62,7 @@ class NcpSmolConfig(PretrainedConfig):
         self.ncp_target = ncp_target
         self.ncp_weight = ncp_weight
         self.vq_weight = vq_weight
+        self.codebook_normalization = codebook_normalization
         self.architectures = ["NcpSmolForCausalLM"]
         self.auto_map = {
             "AutoConfig": "configuration.NcpSmolConfig",

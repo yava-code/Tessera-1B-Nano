@@ -77,10 +77,12 @@ Both arms are complete and matched: 999,948,288 tokens each, no restarts, no NaN
 - **H4 — direction only.** The zero-delta decays across the chunk (+0.1066 at offset 0,
   +0.1039 at offset 3): the predicted concept helps most where it is freshest, but the
   gradient of the effect is small.
-- **H5 — open, with a stated prerequisite.** The direct quantized-target swap failed the
-  scale check (NCP loss ~1e-6 because transformed codewords are too tightly clustered).
-  A valid repeat needs normalized or variance-matched codewords before the ablation is
-  token-matched.
+- **H5 — answered after the prerequisite was satisfied.** The direct quantized-target
+  swap failed the scale check (NCP loss ~1e-6 because transformed codewords are too
+  tightly clustered). With per-segment variance-matched codewords the initial quantized
+  NCP loss restores to order 1 (0.88), and the token-matched 16.8M-token repeat is
+  neutral on NTP (1.8493 continuous versus 1.8495 quantized) with a mildly larger
+  zero-delta for quantized (+0.188 versus +0.172); see `results/h5-quantized/README.md`.
 - **H6 — two of three checks.** Codebook perplexity 7.55 and usage 85.6% at the final
   checkpoint, grown monotonically from 2.93/74.8% at 100M tokens — no low-entropy
   shortcut. The shuffle check fails (delta ~ 0), consistent with H3.
@@ -133,8 +135,16 @@ Ordered by cost and information gained:
      partner identity, similarity, and domain; the +0.1050 zero-delta is the only
      intervention that hurts. The "is my input prose" reading is ruled out at this
      effect size.
-3. **H5 quantized-target with normalized codewords.** The stated prerequisite above;
-   a short token-matched ablation before any second full run.
+3. ~~**H5 quantized-target with normalized codewords**~~ **Executed 2026-09-29**
+   (`results/h5-quantized/README.md`). The variance-matching prerequisite is
+   implemented (`codebook_normalization: variance`, per-segment unit rescale of
+   transformed codewords; restores the initial quantized NCP loss from 3e-7 to 0.88,
+   continuous order ~1.0). Two token-matched 16.8M-token TinyStories arms:
+   held-out NTP 1.8493 (continuous) versus 1.8495 (quantized) — a wash; quantized
+   NCP train loss 0.141 versus 0.569, codebook ppl 10.2 versus 9.8, zero-delta
+   +0.188 versus +0.172, both arms sequence-generic. Verdict: with the target
+   error scale fixed, target discretization is neutral on token loss and mildly
+   positive on the intervention signature at this scale.
 4. **Sequence length 4096 at the same token budget.** More concept positions per sequence
    tests whether channel granularity limits usefulness.
 5. **4–8B tokens.** The same matched design at several times the current budget,

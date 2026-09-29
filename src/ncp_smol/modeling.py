@@ -53,6 +53,7 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
             hidden_size=config.hidden_size,
             segments=config.segments,
             codebook_size=config.codebook_size,
+            normalization=getattr(config, "codebook_normalization", "none"),
         )
         self.concept_head = nn.Linear(
             config.hidden_size,
@@ -84,6 +85,7 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
         ncp_target: str = "continuous",
         ncp_weight: float = 1.0,
         vq_weight: float = 1.0,
+        codebook_normalization: str = "none",
         **load_kwargs: Any,
     ) -> NcpSmolForCausalLM:
         base = AutoModelForCausalLM.from_pretrained(
@@ -105,6 +107,7 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
             ncp_target=ncp_target,
             ncp_weight=ncp_weight,
             vq_weight=vq_weight,
+            codebook_normalization=codebook_normalization,
         )
         model = cls(config)
         model.backbone.load_state_dict(base.state_dict())

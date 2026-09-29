@@ -53,6 +53,7 @@ def make_model(config: ExperimentConfig, checkpoint: Path | None = None) -> torc
             ncp_target=config.model.ncp_target,
             ncp_weight=config.model.ncp_weight,
             vq_weight=config.model.vq_weight,
+            codebook_normalization=config.model.codebook_normalization,
         )
     return AutoModelForCausalLM.from_pretrained(
         config.model.base_model,

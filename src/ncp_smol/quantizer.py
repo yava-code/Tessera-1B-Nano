@@ -15,8 +15,11 @@ class QuantizerOutput:
 
 
 class CodebookTransform(nn.Module):
-    def __init__(self, segments: int, dim: int) -> None:
+    def __init__(self, segments: int, dim: int, normalization: str = "none") -> None:
         super().__init__()
+        if normalization not in {"none", "variance"}:
+            raise ValueError("normalization must be 'none' or 'variance'")
+        self.normalization = normalization
         self.layers = nn.ModuleList(
             [
                 nn.Sequential(
@@ -29,13 +32,28 @@ class CodebookTransform(nn.Module):
         )
 
     def forward(self, codebook: Tensor) -> Tensor:
-        return torch.stack(
+        codes = torch.stack(
             [layer(codes) for layer, codes in zip(self.layers, codebook, strict=True)]
         )
+        if self.normalization == "variance":
+            # Variance-match the transformed codewords to standard normal targets, per
+            # segment. The initial transformed cloud is far tighter than std 1 (the
+            # preregistered H5 failure was an initial NCP loss ~1e-6); rescaling gives
+            # selected-code prediction a meaningful starting error without changing the
+            # codebook's learned directions.
+            std = codes.float().std(dim=1, keepdim=True).clamp_min(1e-4).to(codes.dtype)
+            codes = codes / std
+        return codes
 
 
 class ProductVectorQuantizer(nn.Module):
-    def __init__(self, hidden_size: int, segments: int, codebook_size: int) -> None:
+    def __init__(
+        self,
+        hidden_size: int,
+        segments: int,
+        codebook_size: int,
+        normalization: str = "none",
+    ) -> None:
         super().__init__()
         if hidden_size % segments:
             raise ValueError("hidden_size must be divisible by segments")
@@ -44,11 +62,12 @@ class ProductVectorQuantizer(nn.Module):
         self.segments = segments
         self.codebook_size = codebook_size
         self.segment_dim = hidden_size // segments
+        self.normalization = normalization
         self.register_buffer(
             "codebook",
             torch.empty(segments, codebook_size, self.segment_dim),
         )
-        self.transform = CodebookTransform(segments, self.segment_dim)
+        self.transform = CodebookTransform(segments, self.segment_dim, normalization)
         nn.init.normal_(self.codebook, std=0.02)
 
     def transformed_codes(self) -> Tensor:

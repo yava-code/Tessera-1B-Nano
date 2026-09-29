@@ -29,6 +29,7 @@ class ModelConfig:
     ncp_target: str = "continuous"
     ncp_weight: float = 1.0
     vq_weight: float = 1.0
+    codebook_normalization: str = "none"
     dtype: str = "bfloat16"
 
 
