@@ -138,7 +138,21 @@ declares `auto_map`; the loading snippet in the card says so). Recorded outcome:
 - The card loading snippets were corrected (the concept arm needs `trust_remote_code=True`)
   and re-uploaded to both repos after this check.
 
-## 6. After publishing (pending)
+## 5c. Full-parity verification on all 256 blocks (2026-09-29, passed)
+
+`modal_app.py::verify_hf` (A100, bfloat16, batch 8) re-measured the committed eval from
+the published HF weights on all 256 held-out blocks of the volume validation split
+(its SHA256 matches `data_metadata.json`): held-out NTP 2.5143 (base) and 2.5151
+(concept) versus the committed 2.5135 / 2.5142 (batch-1 eval; +0.0008 is the batch-size
+rounding), and the zero-feedback delta **+0.1050** reproduces the committed number
+exactly. The published checkpoints are the trained ones, end to end.
+
+## 6. After publishing
+
+- [x] Code is public: the repository is pushed to
+      [github.com/yava-code/Tessera-1B-Nano](https://github.com/yava-code/Tessera-1B-Nano)
+      (2026-09-29); the HF cards, the Space bundle, and the post drafts reference it.
+- [ ] Update docs/posts.md placeholders if the GitHub account or repo name changes.
 
 
 - [ ] Flip posts' `<link>` placeholders in `docs/posts.md` to the real repo URL and

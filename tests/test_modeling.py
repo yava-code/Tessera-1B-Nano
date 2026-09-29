@@ -71,9 +71,24 @@ def test_interventions_change_the_concept_conditioning() -> None:
         predicted = model(input_ids=input_ids, concept_mode="predicted").logits
         zero = model(input_ids=input_ids, concept_mode="zero").logits
         shuffled = model(input_ids=input_ids, concept_mode="shuffle").logits
+        similar = model(input_ids=input_ids, concept_mode="similar_shuffle").logits
 
     assert not torch.equal(predicted[:, 3:], zero[:, 3:])
     assert not torch.equal(predicted[:, 7:], shuffled[:, 7:])
+    assert not torch.equal(predicted[:, 7:], similar[:, 7:])
+
+
+def test_similar_shuffle_never_returns_own_feedback() -> None:
+    torch.manual_seed(13)
+    model = tiny_model().eval()
+    batch = 4
+    predicted = torch.randn(batch, 5, 32)
+
+    partner = model._similar_shuffle(predicted)
+
+    assert partner.shape == predicted.shape
+    for index in range(batch):
+        assert not torch.equal(partner[index], predicted[index])
 
 
 def test_feedback_is_shifted_by_k_minus_one_positions() -> None:

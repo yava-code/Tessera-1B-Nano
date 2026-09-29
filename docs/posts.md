@@ -37,7 +37,9 @@ tokens. Our neutral result at 1B mirrors that structure one scale down.
 
 **8/** Everything is open: code, causal leakage tests, SHA-pinned data caches, full metric
 logs, both checkpoints' eval JSONs. Two matched 1B-token runs, zero restarts, zero NaNs.
-Next probes are stated in advance. Repo: <link>.
+Next probes are stated in advance. Code and whitepaper:
+github.com/yava-code/Tessera-1B-Nano. Weights: hf.co/yava-code (Tessera-1B-Nano,
+Tessera-1B-Nano-Base).
 
 ## 2. Reddit / Hacker News longread (EN)
 
@@ -64,8 +66,9 @@ stop reading there, you'll miss the parts we actually find interesting:
    hit a low-entropy shortcut (~2.4 ppl); at 1B tokens that failure mode is gone.
 
 3. **But the use is sequence-generic.** Replace each sequence's concept feedback with
-   another sequence's from the same batch: cost +0.0008, i.e. nothing. The decoder
-   consumes topic-level information, not sequence-identifying information. The same
+   another sequence's from the same batch: cost +0.0008, i.e. nothing. We then replaced
+   it with the most *similar* sequence's feedback: +0.0008 again. The decoder consumes
+   something, but neither sequence nor even topic identity within a batch. The same
    split appeared at our 135M TinyStories gate, replicated across two scales.
 
 For calibration: the original paper's own ablation shows NTP+either auxiliary *alone* is

@@ -17,7 +17,7 @@ from transformers.models.llama.modeling_llama import (
 from .configuration import NcpSmolConfig
 from .quantizer import ProductVectorQuantizer
 
-ConceptMode = Literal["predicted", "zero", "shuffle"]
+ConceptMode = Literal["predicted", "zero", "shuffle", "similar_shuffle"]
 
 
 @dataclass
@@ -140,6 +140,24 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
         mask = mask.view(1, 1, length, length).expand(batch, 1, length, length).clone()
         return mask.masked_fill(~valid[:, None, None, :], torch.finfo(dtype).min)
 
+    def _similar_shuffle(self, predicted: Tensor) -> Tensor:
+        """Replace each sequence's feedback with the most similar sequence's feedback.
+
+        Similarity is the cosine between mean-pooled predicted concept vectors of whole
+        sequences; a sequence never maps to itself. This is the similar-shuffle probe
+        from docs/experiments.md: if feedback from a similar sequence hurts while random
+        feedback does not, the channel carries topic-level signal rather than sequence
+        identity.
+        """
+        batch = predicted.shape[0]
+        if batch < 2:
+            return predicted
+        pooled = F.normalize(predicted.detach().mean(dim=1), dim=1)
+        similarity = pooled @ pooled.T
+        similarity.fill_diagonal_(float("-inf"))
+        partner = similarity.argmax(dim=1)
+        return predicted[partner]
+
     def _concept_path(
         self,
         hidden: Tensor,
@@ -215,6 +233,8 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
             predicted = torch.zeros_like(predicted)
         elif mode == "shuffle":
             predicted = predicted.roll(shifts=1, dims=0)
+        elif mode == "similar_shuffle":
+            predicted = self._similar_shuffle(predicted)
 
         feedback = self._align_feedback(predicted.detach(), length)
         return feedback, {
@@ -265,7 +285,7 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
         return_dict: bool = True,
         **kwargs: Any,
     ) -> NcpCausalLMOutput | tuple[Tensor, ...]:
-        if concept_mode not in {"predicted", "zero", "shuffle"}:
+        if concept_mode not in {"predicted", "zero", "shuffle", "similar_shuffle"}:
             raise ValueError(f"unknown concept_mode: {concept_mode}")
 
         self._hook_state = {

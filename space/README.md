@@ -13,7 +13,7 @@ short_description: Side-by-side generation and a live concept-intervention reado
 # Tessera-1B-Nano vs Tessera-1B-Nano-Base
 
 Side-by-side demo for the token-matched comparison described in the
-[ncp-smol repository](https://github.com/yava-code/ncp-smol). Three generations per run:
+[Tessera-1B-Nano repository](https://github.com/yava-code/Tessera-1B-Nano). Three generations per run:
 the NTP-only baseline, the concept arm with predicted feedback, and the concept arm with
 its concept feedback zeroed at inference. A readout panel reports the teacher-forced NTP
 loss of each model on the prompt and the zero-feedback penalty of the concept arm.

@@ -112,9 +112,13 @@ those artifacts, with no extrapolation from partial runs.
 
 Ordered by cost and information gained:
 
-1. **Similar-shuffle probe (CPU).** Shuffle feedback to the most similar sequence in the
-   batch instead of a random one. If similar-shuffle hurts while exact shuffle does not,
-   the channel carries topic-level rather than sequence-identity signal.
+1. ~~**Similar-shuffle probe**~~ **Executed 2026-09-29** (A100, 32 held-out batches,
+   identical seed, `results/fineweb-edu-ncp/step-00007629-eval-similar.json`):
+   similar-shuffle delta **+0.0008** versus random-shuffle +0.0008 and zero +0.1050.
+   Topic-similar feedback is as good as random feedback: within a FineWeb-Edu batch the
+   channel does not even carry topic-identity signal (partners are same-corpus; a
+   cross-domain partner pool is the sharpened follow-up). The next probe in line is H5
+   with normalized codewords.
 2. **H5 quantized-target with normalized codewords.** The stated prerequisite above;
    a short token-matched ablation before any second full run.
 3. **Sequence length 4096 at the same token budget.** More concept positions per sequence

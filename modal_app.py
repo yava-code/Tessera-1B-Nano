@@ -63,6 +63,89 @@ def train(config: str) -> dict[str, object]:
     cpu=4,
     memory=16384,
     volumes={"/vol": volume},
+    timeout=3_600,
+)
+def verify_hf(
+    base_repo: str = "yava-code/Tessera-1B-Nano-Base",
+    concept_repo: str = "yava-code/Tessera-1B-Nano",
+    blocks: int = 256,
+) -> dict[str, object]:
+    """Re-measure the committed eval from the published HF weights on /vol held-out data."""
+    import hashlib
+    import json
+
+    import numpy as np
+    import torch
+    from huggingface_hub import hf_hub_download
+    from transformers import AutoModelForCausalLM
+
+    sys.path.insert(0, f"{REMOTE_ROOT}/src")
+    from ncp_smol.runtime import token_cross_entropy
+
+    validation_path = "/vol/.cache/data/fineweb-edu-1b/validation.bin"
+    sha = hashlib.sha256(open(validation_path, "rb").read()).hexdigest()
+    with open("/vol/runs/fineweb-edu-ntp/data_metadata.json", encoding="utf-8") as handle:
+        metadata = json.load(handle)
+    sha_matches = sha == metadata["validation_sha256"]
+
+    sequence_length = 1024
+    tokens = np.memmap(validation_path, dtype=np.uint32, mode="r")
+    order = np.arange(len(tokens) // sequence_length)
+    np.random.default_rng(17 + 20_000).shuffle(order)
+    order = order[:blocks]
+    device = torch.device("cuda")
+
+    results: dict[str, object] = {"validation_sha256_matches": sha_matches, "blocks": blocks}
+    for name, repo, trust in (
+        ("base", base_repo, False),
+        ("concept", concept_repo, True),
+    ):
+        _ = hf_hub_download(repo, "README.md")  # fail fast if the repo moved
+        model = AutoModelForCausalLM.from_pretrained(
+            repo,
+            trust_remote_code=trust,
+            dtype=torch.bfloat16,
+        ).to(device)
+        model.eval()
+        predicted_total = 0.0
+        zero_total = 0.0
+        with torch.no_grad():
+            for start in range(0, len(order), 8):
+                chunk = order[start : start + 8]
+                batch = torch.stack(
+                    [
+                        torch.from_numpy(
+                            np.array(
+                                tokens[index * sequence_length : (index + 1) * sequence_length],
+                                dtype=np.int64,
+                            )
+                        )
+                        for index in chunk
+                    ]
+                ).to(device)
+                outputs = model(input_ids=batch)
+                predicted_total += float(
+                    token_cross_entropy(outputs.logits, batch).mean().item()
+                ) * len(chunk)
+                if trust:
+                    zero_outputs = model(input_ids=batch, concept_mode="zero")
+                    zero_total += float(
+                        token_cross_entropy(zero_outputs.logits, batch).mean().item()
+                    ) * len(chunk)
+        mean_ntp = predicted_total / len(order)
+        entry: dict[str, float] = {"held_out_ntp": round(mean_ntp, 4)}
+        if trust:
+            entry["zero_feedback_ntp"] = round(zero_total / len(order), 4)
+            entry["zero_feedback_delta"] = round(zero_total / len(order) - mean_ntp, 4)
+        results[name] = entry
+    return results
+
+
+@app.function(
+    gpu="A100-40GB",
+    cpu=4,
+    memory=16384,
+    volumes={"/vol": volume},
     timeout=14_400,
 )
 def evaluate(

@@ -30,7 +30,11 @@ def evaluate_checkpoint(
         config.data.sequence_length,
     )
     count = batches or config.train.eval_batches
-    modes = ["predicted", "zero", "shuffle"] if config.run.mode == "ncp" else ["predicted"]
+    modes = (
+        ["predicted", "zero", "shuffle", "similar_shuffle"]
+        if config.run.mode == "ncp"
+        else ["predicted"]
+    )
     results: dict[str, Any] = {}
 
     for mode in modes:
@@ -76,6 +80,8 @@ def evaluate_checkpoint(
         results["intervention"] = {
             "zero_minus_predicted": results["zero"]["ntp_loss"] - predicted,
             "shuffle_minus_predicted": results["shuffle"]["ntp_loss"] - predicted,
+            "similar_shuffle_minus_predicted": results["similar_shuffle"]["ntp_loss"]
+            - predicted,
         }
     return results
 

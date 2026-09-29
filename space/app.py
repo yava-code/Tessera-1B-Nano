@@ -57,7 +57,7 @@ with gr.Blocks(title="Tessera-1B-Nano comparison") as demo:
         "  sampled text to diverge.\n\n"
         f"Checkpoints: [{CONCEPT_REPO}](https://huggingface.co/{CONCEPT_REPO}),\n"
         f"[{BASELINE_REPO}](https://huggingface.co/{BASELINE_REPO}). Study and whitepaper:\n"
-        "the [ncp-smol repository](https://github.com/yava-code/ncp-smol)."
+        "the [Tessera-1B-Nano repository](https://github.com/yava-code/Tessera-1B-Nano)."
     )
 
     run_button.click(

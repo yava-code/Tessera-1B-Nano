@@ -225,6 +225,7 @@ dependency; the script documents its ephemeral invocation).
 
 ## References
 
+- Code, artifacts, and figures (this study): https://github.com/yava-code/Tessera-1B-Nano
 - ConceptLM: Predicting Concepts, Not Just Tokens. https://arxiv.org/abs/2602.08984
 - NCP-ArchPreview. https://arxiv.org/abs/2609.10715
 - LUMIA-Group/ConceptLM. https://github.com/LUMIA-Group/ConceptLM

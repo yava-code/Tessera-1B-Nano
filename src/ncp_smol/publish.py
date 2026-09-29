@@ -165,6 +165,7 @@ intervention evaluation JSON (also shipped in this repository as `eval.json` and
 
 ## References
 
+- Code and study: https://github.com/yava-code/Tessera-1B-Nano
 - ConceptLM: https://arxiv.org/abs/2602.08984
 - NCP-ArchPreview: https://arxiv.org/abs/2609.10715
 """

@@ -97,6 +97,7 @@ model = AutoModelForCausalLM.from_pretrained("REPO_ID", trust_remote_code=True)
 
 ## References
 
+- Code and study: https://github.com/yava-code/Tessera-1B-Nano
 - ConceptLM: https://arxiv.org/abs/2602.08984
 - NCP-ArchPreview: https://arxiv.org/abs/2609.10715
 ````
