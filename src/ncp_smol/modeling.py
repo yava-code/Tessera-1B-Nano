@@ -58,7 +58,10 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
             config.hidden_size,
             config.segments * config.codebook_size,
         )
-        self._hook_state: dict[str, Any] = {}
+        self._hook_state: dict[str, Any] = {
+            "last_feedback": None,
+            "override_feedback": None,
+        }
         self._hook = self.backbone.model.layers[config.insert_layer].register_forward_pre_hook(
             self._inject_concepts,
             with_kwargs=True,
@@ -231,12 +234,16 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
         else:
             ncp_loss = zero
 
-        if mode == "zero":
+        override = self._hook_state.get("override_feedback")
+        if override is not None:
+            predicted = self._fit_override(predicted, override)
+        elif mode == "zero":
             predicted = torch.zeros_like(predicted)
         elif mode == "shuffle":
             predicted = predicted.roll(shifts=1, dims=0)
         elif mode == "similar_shuffle":
             predicted = self._similar_shuffle(predicted)
+        self._hook_state["last_feedback"] = predicted.detach()
 
         feedback = self._align_feedback(predicted.detach(), length)
         return feedback, {
@@ -244,6 +251,21 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
             "vq_loss": quantized.loss,
             "code_indices": quantized.indices,
         }
+
+    def _fit_override(self, predicted: Tensor, override: Tensor) -> Tensor:
+        """Shape a precomputed feedback pool to replace this pass's predicted feedback."""
+        batch = predicted.shape[0]
+        source = override.to(device=predicted.device, dtype=predicted.dtype)
+        if source.shape[0] == 0:
+            raise ValueError("override feedback pool is empty")
+        if source.shape[1] != predicted.shape[1]:
+            raise ValueError(
+                f"override pool has {source.shape[1]} chunks, expected {predicted.shape[1]}"
+            )
+        if source.shape[0] < batch:
+            index = torch.randint(0, source.shape[0], (batch,), device=source.device)
+            source = source[index]
+        return source[:batch]
 
     def _align_feedback(self, predicted: Tensor, length: int) -> Tensor:
         batch, _, width = predicted.shape
@@ -295,6 +317,8 @@ class NcpSmolForCausalLM(PreTrainedModel, GenerationMixin):
             "attention_mask": attention_mask,
             "mode": concept_mode,
             "aux": None,
+            "last_feedback": None,
+            "override_feedback": self._hook_state.get("override_feedback"),
         }
         try:
             outputs = self.backbone(

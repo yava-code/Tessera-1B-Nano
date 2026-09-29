@@ -43,6 +43,24 @@ def prepare_data(config: str) -> dict[str, object]:
     return prepare(_config(config))
 
 
+@app.function(cpu=8, memory=16384, volumes={"/vol": volume}, timeout=86_400)
+def prepare_foreign(name: str) -> dict[str, object]:
+    """Pack a foreign-corpus pool (wikipedia | code) with the project tokenizer."""
+    sys.path.insert(0, f"{REMOTE_ROOT}/src")
+    from ncp_smol.experiment import load_experiment
+    from ncp_smol.foreign_corpus import prepare_foreign_pool
+
+    experiment = load_experiment(_config("fineweb-edu-ncp.yaml"))
+    return prepare_foreign_pool(
+        name,
+        tokenizer_name=experiment.model.base_model,
+        tokenizer_revision=experiment.model.revision,
+        output_dir="/vol/.cache/data/foreign",
+        tokens=10_000_000,
+        seed=experiment.run.seed,
+    )
+
+
 @app.function(
     gpu="A100-40GB",
     cpu=8,
@@ -146,6 +164,68 @@ def verify_hf(
     cpu=4,
     memory=16384,
     volumes={"/vol": volume},
+    timeout=3_600,
+)
+def cross_domain_probe(
+    checkpoint: str,
+    pools: str = "wikipedia,code",
+    batches: int = 32,
+) -> dict[str, object]:
+    """Run the cross-domain feedback partner probe on the final NCP checkpoint."""
+    sys.path.insert(0, f"{REMOTE_ROOT}/src")
+    import torch
+
+    from ncp_smol.data import TokenBatcher, TokenCorpus
+    from ncp_smol.experiment import load_experiment
+    from ncp_smol.modeling import NcpSmolForCausalLM
+    from ncp_smol.probes import cross_domain_delta, foreign_feedback
+    from ncp_smol.runtime import latest_checkpoint, seed_everything
+
+    config = load_experiment(_config("fineweb-edu-ncp.yaml"))
+    seed_everything(config.run.seed)
+    device = torch.device("cuda")
+    resolved = checkpoint
+    if checkpoint == "latest":
+        found = latest_checkpoint(config.run.output_dir)
+        if found is None:
+            raise ValueError("no checkpoint found")
+        resolved = str(found)
+    model = NcpSmolForCausalLM.from_pretrained(resolved).to(device).eval()
+
+    corpus = TokenCorpus(
+        Path(config.data.cache_dir) / "validation.bin",
+        config.data.sequence_length,
+    )
+    batch_size = config.optim.micro_batch_size
+    results: dict[str, object] = {"checkpoint": resolved, "batches": batches}
+    for pool_name in pools.split(","):
+        pool_name = pool_name.strip()
+        pool_corpus = TokenCorpus(
+            Path("/vol/.cache/data/foreign") / pool_name / "pool.bin",
+            config.data.sequence_length,
+        )
+        pool_batcher = TokenBatcher(pool_corpus, batch_size, seed=config.run.seed, repeat=True)
+        pool = foreign_feedback(model, pool_batcher, batches=batches, device=device)
+        delta = cross_domain_delta(
+            model,
+            corpus,
+            pool,
+            batches=batches,
+            batch_size=batch_size,
+            seed=config.run.seed + 20_000,
+            device=device,
+        )
+        entry = dict(delta)
+        entry["pool_vectors"] = int(pool.shape[0])
+        results[pool_name] = entry
+    return results
+
+
+@app.function(
+    gpu="A100-40GB",
+    cpu=4,
+    memory=16384,
+    volumes={"/vol": volume},
     timeout=14_400,
 )
 def evaluate(
@@ -191,8 +271,17 @@ def progress(config: str) -> None:
 
 
 @app.local_entrypoint()
-def prepare(config: str = "tinystories-overfit.yaml") -> None:
-    print(prepare_data.remote(config))
+def prepare_foreign_entry(name: str) -> None:
+    print(prepare_foreign.remote(name))
+
+
+@app.local_entrypoint()
+def cross_domain(
+    checkpoint: str = "latest",
+    pools: str = "wikipedia,code",
+    batches: int = 32,
+) -> None:
+    print(cross_domain_probe.remote(checkpoint, pools, batches))
 
 
 @app.local_entrypoint()

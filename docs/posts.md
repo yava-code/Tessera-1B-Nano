@@ -67,9 +67,12 @@ stop reading there, you'll miss the parts we actually find interesting:
 
 3. **But the use is sequence-generic.** Replace each sequence's concept feedback with
    another sequence's from the same batch: cost +0.0008, i.e. nothing. We then replaced
-   it with the most *similar* sequence's feedback: +0.0008 again. The decoder consumes
-   something, but neither sequence nor even topic identity within a batch. The same
-   split appeared at our 135M TinyStories gate, replicated across two scales.
+   it with the most *similar* sequence's feedback: +0.0008 again. Then we went
+   cross-domain: feedback computed by the same model on Wikipedia articles (+0.0016) or
+   on Python source code (+0.0011) swapped in as the decoder's concept feedback. All
+   near zero; only silencing the channel entirely (+0.1050) hurts. The decoder consumes
+   something, but neither sequence, topic, nor even domain identity. The same split
+   appeared at our 135M TinyStories gate, replicated across two scales.
 
 For calibration: the original paper's own ablation shows NTP+either auxiliary *alone* is
 worse than pure NTP, and only the full loss triple wins at 8–300B-token scales. A neutral

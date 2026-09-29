@@ -1,0 +1,17 @@
+{
+  "batches": 32,
+  "checkpoint": "/vol/runs/fineweb-edu-ncp/step-00007629",
+  "code": {
+    "delta": 0.0010558515787124634,
+    "overridden_ntp_loss": 2.515387825667858,
+    "pool_vectors": 256,
+    "reference_ntp_loss": 2.5143319740891457
+  },
+  "function_call_id": "fc-01M3QBBB05K8NCKCQ3FY1V6TYZ",
+  "wikipedia": {
+    "delta": 0.001550436019897461,
+    "overridden_ntp_loss": 2.515882410109043,
+    "pool_vectors": 256,
+    "reference_ntp_loss": 2.5143319740891457
+  }
+}

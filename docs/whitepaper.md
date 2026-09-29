@@ -147,9 +147,15 @@ Three readings, in the order we consider them most important:
    another sequence's feedback from the same batch, at the same chunk offsets, costs only
    +0.0008. The decoder consumes *something* from the concept channel, but almost nothing
    that identifies the specific sequence it is reading.
-
 The same zero-hurts/shuffle-does-not split appeared at the 135M TinyStories gate. Two
 scales, two data regimes, one replicated structure.
+
+A cross-domain control sharpens the reading further. We captured predicted concept
+feedback on out-of-distribution corpora (English Wikipedia, Python source code), then
+swapped it in as the decoder's feedback on held-out FineWeb-Edu batches: +0.0016
+(wikipedia) and +0.0011 (code), against +0.1050 for silencing the channel. Partner domain
+does not matter at this effect size; the sequence-generic use holds across partner
+identity, similarity, and domain.
 
 ![Codebook growth over the run](figures/codebook-growth.png)
 
@@ -201,9 +207,10 @@ single-run comparisons at matched token counts, which is exactly what the design
 
 Ordered by cost and discriminating power:
 
-1. **Similar-shuffle probe (CPU).** Shuffle feedback to the most *similar* sequence in the
-   batch instead of a random one. If similar-shuffle hurts while exact shuffle does not,
-   the channel carries topic-level signal, not sequence identity.
+1. ~~**Similar-shuffle probe**~~ Executed: +0.0008, identical to random shuffle
+   (`results/fineweb-edu-ncp/step-00007629-eval-similar.json`).
+1b. ~~**Cross-domain feedback partner probe**~~ Executed: wikipedia partners +0.0016,
+   code partners +0.0011 (`docs/probe-cross-domain.md`), ruling out domain gating.
 2. **Quantized-target ablation with normalized codewords** (H5 with its stated
    prerequisite), token-matched and short, before any second full run.
 3. **Sequence length 4096 at the same token budget**, testing whether concept-position

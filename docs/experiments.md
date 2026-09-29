@@ -116,12 +116,26 @@ Ordered by cost and information gained:
    identical seed, `results/fineweb-edu-ncp/step-00007629-eval-similar.json`):
    similar-shuffle delta **+0.0008** versus random-shuffle +0.0008 and zero +0.1050.
    Topic-similar feedback is as good as random feedback: within a FineWeb-Edu batch the
-   channel does not even carry topic-identity signal (partners are same-corpus; a
-   cross-domain partner pool is the sharpened follow-up). The next probe in line is H5
-   with normalized codewords.
-2. **H5 quantized-target with normalized codewords.** The stated prerequisite above;
+   channel does not even carry topic-identity signal.
+2. ~~**Cross-domain feedback partner probe**~~ **Executed 2026-09-29** (A100, 32
+   held-out batches, same seed; design and preregistered predictions in
+   `docs/probe-cross-domain.md`, artifact
+   `results/fineweb-edu-ncp/step-00007629-eval-cross-domain.json`). Foreign pools
+   packed with the same tokenizer: Wikipedia 20231101.en (10M tokens, sha256
+   590f3d79...) and code_search_net/python (10M tokens, sha256 9ca32927...;
+   codeparrot/github-code is dead under datasets>=3). Predicted feedback captured on
+   foreign sequences is re-injected on held-out FineWeb-Edu batches:
+   - wikipedia partners: delta **+0.0016**;
+   - code partners: delta **+0.0011**;
+   - both preregistered bands (wiki +0.001..0.01, code +0.01..0.03) contained the
+     result at the low edge: the channel ignores partner domain entirely. Combined
+     with similar-shuffle (+0.0008), the use is robustly sequence-generic across
+     partner identity, similarity, and domain; the +0.1050 zero-delta is the only
+     intervention that hurts. The "is my input prose" reading is ruled out at this
+     effect size.
+3. **H5 quantized-target with normalized codewords.** The stated prerequisite above;
    a short token-matched ablation before any second full run.
-3. **Sequence length 4096 at the same token budget.** More concept positions per sequence
+4. **Sequence length 4096 at the same token budget.** More concept positions per sequence
    tests whether channel granularity limits usefulness.
-4. **4–8B tokens.** The same matched design at several times the current budget,
+5. **4–8B tokens.** The same matched design at several times the current budget,
    approaching the scales where the original paper reports gains (8–10B).
