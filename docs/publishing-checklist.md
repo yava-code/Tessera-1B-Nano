@@ -50,6 +50,12 @@ except `optimizer.pt` (excluded by `ignore_patterns`). That is the model, tokeni
   [yava-code/Tessera-1B-Nano-Base](https://huggingface.co/yava-code/Tessera-1B-Nano-Base).
   The brand lives in the cards. If the org is granted later, both repos can be moved in
   the HF UI without a re-upload.
+- Org transfer attempted 2026-09-29: `move_repo` to `paragon-labs/...` returned
+  **403 Forbidden** ("You don't have the rights to move this model to paragon-labs").
+  The token's user is an org member without write rights. To enable the move, one of:
+  an org owner grants the user `write` in the paragon-labs member settings; or an org
+  owner performs the transfer; or the user issues a fine-grained token scoped to
+  paragon-labs write. Until then the recorded `yava-code/...` links stay canonical.
 - Repo starts public by default; add `--private` for a first private upload and flip it
   in the HF UI later. `publish()` calls `create_repo(..., exist_ok=True)`, so a retry is
   safe and re-uploads over the same repo.
