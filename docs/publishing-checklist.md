@@ -147,6 +147,18 @@ the published HF weights on all 256 held-out blocks of the volume validation spl
 rounding), and the zero-feedback delta **+0.1050** reproduces the committed number
 exactly. The published checkpoints are the trained ones, end to end.
 
+## 5c-bis. Tessera-135M-Gate (2026-09-29, live)
+
+The 135M architecture gate is published alongside the 360M arms for the scale story:
+**https://huggingface.co/yava-code/Tessera-135M-Gate** (18 files, weights + tokenizer +
+eval.json + metrics.jsonl, no optimizer.pt; card verified by download: gate title,
+overfit framing, fresh numbers zero +0.0205 / codebook 2.4087 / 33.0%). The card title
+comes from `build_card` config-aware naming (TinyStories -> Tessera-135M-Gate); the
+publish function redeployed first so the container built the gate branch. The weights
+load with `trust_remote_code=True` and generate coherent TinyStories text. Lesson: after
+touching `src/ncp_smol/publish.py`, always `modal deploy modal_publish.py` before any
+spawn - the container snapshots the module at deploy time.
+
 ## 5d. Demo Space (2026-09-29, live; seed toggle added 2026-09-29 later)
 
 Seed reproducibility: a numeric Seed control (default 7) resets the device-global RNG

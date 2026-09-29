@@ -52,7 +52,13 @@ we aborted after 614k tokens when its NCP loss sat at ~1e-6, because transformed
 were too tightly clustered for selected-code prediction to define a meaningful error.
 Reporting that pilot as "training works" would have been vacuous; aborting it defined the
 prerequisite for any future quantized-target ablation: normalized or variance-matched
-codewords.
+codewords. The gate checkpoint itself is published as
+[Tessera-135M-Gate](https://huggingface.co/yava-code/Tessera-135M-Gate) so the scale story
+is inspectable: at 135M overfit the decoder already uses the channel (zero-delta +0.0205),
+but the codebook sat in a low-entropy shortcut (ppl 2.41, usage 33%) and shuffled feedback
+cost nothing. At 1B tokens the same architecture leaves that shortcut far behind
+(ppl 7.55, usage 85.6%, zero-delta +0.1050). Gate small, then scale: some behaviors only
+appear above a scale threshold.
 
 ## 2. What was implemented
 

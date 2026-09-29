@@ -16,7 +16,13 @@ def _metric(value: float) -> str:
 
 
 def _card_title(config: ExperimentConfig) -> str:
-    return "Tessera-1B-Nano-Base" if config.run.mode == "ntp" else "Tessera-1B-Nano"
+    if config.run.mode == "ntp":
+        return "Tessera-1B-Nano-Base"
+    if config.data.dataset == "roneneldan/TinyStories":
+        # The 135M overfit architecture gate is a different artifact from the 1B-token
+        # comparison arms: it proves the path trains, it is not a quality model.
+        return "Tessera-135M-Gate"
+    return "Tessera-1B-Nano"
 
 
 def _intro(config: ExperimentConfig) -> str:
@@ -26,6 +32,15 @@ def _intro(config: ExperimentConfig) -> str:
             f"Intelligence Labs: the unchanged `{config.model.base_model}` backbone,\n"
             "continued-pretrained without a concept path. It exists so the concept-arm result\n"
             "is interpretable.\n"
+        )
+    if _card_title(config) == "Tessera-135M-Gate":
+        return (
+            "The 135M architecture-gate checkpoint from Paragon Intelligence Labs: the smallest\n"
+            f"member of the Tessera family (`{config.model.base_model}` backbone with the full\n"
+            "Next Concept Prediction path). It is a deliberately overfit gate run that proves\n"
+            "the complete concept path trains end to end before any large spend, and carries the\n"
+            "same causal concept-path architecture as Tessera-1B-Nano. It is not a language\n"
+            "model quality result: it saw a 1M-token TinyStories subset repeated 16 times.\n"
         )
     return (
         "A Next Concept Prediction checkpoint from Paragon Intelligence Labs: an independent,\n"
@@ -48,6 +63,21 @@ def _tldr(config: ExperimentConfig, interventions: dict[str, Any]) -> str:
             "  concept arm is compared against.\n"
             "- The comparison outcome and the intervention readings live in the whitepaper at\n"
             "  `docs/whitepaper.md` in the ncp-smol repository.\n"
+        )
+    if _card_title(config) == "Tessera-135M-Gate":
+        zero_delta = _metric(interventions["zero_minus_predicted"]) if interventions else ""
+        return (
+            "## TL;DR\n\n"
+            "This gate checkpoint exists to de-risk the 1B-token comparison, and the scale\n"
+            "story it records is the point of publishing it.\n\n"
+            f"- **All three objectives train** (NTP, NCP, VQ fell 41 to 43% over the run).\n"
+            f"- **The decoder causally uses the concept channel even at 135M**: zeroing the\n"
+            f"  feedback costs +{zero_delta} nats of held-out NTP loss.\n"
+            "- **The failure mode this gate exposed is real and instructive**: effective\n"
+            "  codebook perplexity stayed near 2.4 (usage ~31-41%), and shuffled feedback cost\n"
+            "  nothing (+0.000). At 1B tokens the same architecture left the shortcut far\n"
+            "  behind (perplexity 7.55, usage 85.6%, zero-delta +0.105). Gate small, then\n"
+            "  scale: some behaviors only appear above a scale threshold.\n"
         )
     zero_delta = _metric(interventions["zero_minus_predicted"]) if interventions else ""
     return (
