@@ -1,0 +1,60 @@
+{
+  "data": {
+    "cache_dir": "/vol/.cache/data/fineweb-edu-1b-4096",
+    "cache_train_tokens": null,
+    "dataset": "HuggingFaceFW/fineweb-edu",
+    "overfit": false,
+    "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+    "sequence_length": 4096,
+    "shuffle_buffer": 10000,
+    "subset": "sample-10BT",
+    "text_column": "text",
+    "train_split": "train",
+    "train_tokens": 1000000000,
+    "validation_split": null,
+    "validation_tokens": 10000000
+  },
+  "model": {
+    "base_model": "HuggingFaceTB/SmolLM2-360M",
+    "chunk_size": 4,
+    "codebook_normalization": "none",
+    "codebook_size": 64,
+    "concept_layers": 2,
+    "dtype": "bfloat16",
+    "insert_layer": 1,
+    "ncp_target": "continuous",
+    "ncp_weight": 1.0,
+    "revision": "f8027fd0eaeea54caa13c31d31b9fdc459c38b49",
+    "segments": 15,
+    "vq_weight": 1.0
+  },
+  "optim": {
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "eps": 1e-08,
+    "grad_accum_steps": 16,
+    "learning_rate": 3e-05,
+    "max_grad_norm": 1.0,
+    "micro_batch_size": 2,
+    "min_lr_ratio": 0.1,
+    "warmup_ratio": 0.01,
+    "weight_decay": 0.1
+  },
+  "run": {
+    "mode": "ncp",
+    "name": "fineweb-edu-4096-ncp-resume",
+    "output_dir": "/vol/runs/fineweb-edu-4096-ncp",
+    "resume": true,
+    "seed": 17
+  },
+  "train": {
+    "compile": false,
+    "eval_batches": 32,
+    "eval_every_tokens": 100000000,
+    "hourly_cost_usd": 2.74,
+    "log_every_steps": 10,
+    "max_wall_time_minutes": 1320,
+    "run_budget_usd": 52.0,
+    "save_every_tokens": 100000000
+  }
+}

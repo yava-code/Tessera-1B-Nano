@@ -86,6 +86,16 @@ Both arms are complete and matched: 999,948,288 tokens each, no restarts, no NaN
 - **H6 — two of three checks.** Codebook perplexity 7.55 and usage 85.6% at the final
   checkpoint, grown monotonically from 2.93/74.8% at 100M tokens — no low-entropy
   shortcut. The shuffle check fails (delta ~ 0), consistent with H3.
+- **Seq-4096 probe (probe 4) — three of four preregistered predictions confirmed.**
+  Both arms at `sequence_length: 4096`, 999,948,288 tokens each, byte-identical token
+  stream to the 1024 arms (`results/fineweb-edu-4096`). Held-out NTP gap **+0.0006** in
+  favor of the pure token arm (preregistered band +/-0.005); zero-feedback delta
+  **+0.1373** (vs +0.1050 at 1024) — the decoder leans on the channel at least as much
+  with 32 chunks per sequence as with 2; shuffle/similar deltas **+0.0011**; codebook
+  **7.22 ppl / 84.3% usage**, just under the 1B-1024 endpoint 7.55 / 85.6% — preregistered
+  as "reaches at least", so a narrow miss. Cost note: at 4096 the NCP arm runs 1.8x the
+  NTP arm's wall time per token (quadratic cross-attention cost in the concept path),
+  versus 1.2x at 1024.
 
 ## What the original paper reports
 
@@ -145,7 +155,22 @@ Ordered by cost and information gained:
    +0.188 versus +0.172, both arms sequence-generic. Verdict: with the target
    error scale fixed, target discretization is neutral on token loss and mildly
    positive on the intervention signature at this scale.
-4. **Sequence length 4096 at the same token budget.** More concept positions per sequence
-   tests whether channel granularity limits usefulness.
+4. ~~**Sequence length 4096 at the same token budget**~~ **Executed 2026-10-01**
+   (`results/fineweb-edu-4096/README.md`; preregistered 2026-09-29). Both arms re-run at
+   `sequence_length: 4096`, 1B tokens each, same seed 17, same corpus revisions, fresh
+   packed cache (`fineweb-edu-1b-4096` — byte-identical token stream to the 1024 cache,
+   only `sequence_length` differs in the metadata), micro_batch 2 x grad_accum 16 (same
+   tokens/microbatch as the 1024 arms, but 2 sequences per microbatch instead of 8). The
+   NCP arm hit its preregistered $40 budget guard at 789M tokens (the concept path pays
+   a quadratic cost at length 4096: 15,013 versus 26,930 tok/s) and was resumed to the
+   full 1B budget under an otherwise identical config. Outcomes:
+   - (a) between-arm NTP gap **+0.0006** (2.5372 vs 2.5367; predicted neutral within
+     +/-0.005) — confirmed;
+   - (b) zero-feedback delta **+0.1373**, larger than the 1024 value +0.1050 — confirmed;
+   - (c) shuffle/similar deltas **+0.0011 / +0.0011** — confirmed;
+   - (d) codebook **7.22 ppl / 84.3% usage** versus the 1B-1024 endpoint 7.55 / 85.6% —
+     missed, narrowly; recorded as a miss.
+   The neutrality result is not a short-context artifact, and the channel's use scales
+   with the number of in-window chunk decisions rather than with context length itself.
 5. **4–8B tokens.** The same matched design at several times the current budget,
    approaching the scales where the original paper reports gains (8–10B).

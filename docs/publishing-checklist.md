@@ -171,12 +171,29 @@ touching `src/ncp_smol/publish.py`, always `modal deploy modal_publish.py` befor
 spawn - the container snapshots the module at deploy time.
 
 ## 5d. Demo Space (2026-09-29, live; seed toggle added 2026-09-29 later)
-
 Seed reproducibility: a numeric Seed control (default 7) resets the device-global RNG
 per generation call — transformers 4.x multinomial sampling draws from the global RNG
 (no generator argument), so `torch.Generator` seeding alone does NOT make repeats
 reproducible (verified locally: bit-identical repeats, different text under a different
 seed). Same seed + prompt = bit-identical generations on every click.
+
+## 5e. Long-run budget guard vs multi-hour configs (2026-10-01, seq-4096 probe)
+
+The seq-4096 NCP arm stopped cleanly at 789M/1B tokens when the config's
+`run_budget_usd: 40` guard fired: the concept path pays a quadratic cost at sequence
+4096 (15,013 vs 26,930 tok/s for the NTP arm), so a budget calibrated at seq 1024
+covers only ~79% of the run. Lessons:
+
+- size `run_budget_usd` from the arm's own throughput (tokens/s x hourly rate), not
+  from a sibling arm at a different sequence length;
+- resume is safe and bit-faithful (optimizer/scheduler/batcher cursor reload,
+  `discarded_metrics: 0`, monotonic metric log) — but resume under the same config
+  would re-trip the guard immediately, since the guard reads accumulated cost from the
+  checkpoint state: bump `run_budget_usd` in the resume config (done:
+  `configs/fineweb-edu-4096-ncp-resume.yaml`, only run name + budget changed);
+- cost asymmetry is itself a finding: NCP runs 1.8x the NTP arm's wall time per token
+  at seq 4096 (1.2x at 1024) — record it, the reviewer will ask about the channel's
+  price at long context.
 
 [Space: yava-code/tessera-comparison](https://huggingface.co/spaces/yava-code/tessera-comparison)
 runs on **ZeroGPU** (free; Gradio on cpu-basic now requires PRO, so the Space was created

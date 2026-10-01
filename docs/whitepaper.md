@@ -204,10 +204,11 @@ specific information can be exploited. None of these is decided by our data, whi
 the next probes are chosen to discriminate between them.
 
 Limitations. One seed per arm; 1B tokens is far below the scales where the original paper
-reports gains; the continuous-target variant sidesteps the paper's discrete selected-code
-prediction (the quantized variant remains gated on codeword normalization); and the cost
-figures are tracked estimates, not invoices. All eval differences should be read as
-single-run comparisons at matched token counts, which is exactly what the design controls.
+reports gains; the published arms use the continuous target, and the quantized-target
+variant with normalized codewords is so far only a 16.8M-token ablation (token-neutral,
+mildly larger zero-delta); and the cost figures are tracked estimates, not invoices. All
+eval differences should be read as single-run comparisons at matched token counts, which
+is exactly what the design controls.
 
 ## 6. Next probes, stated in advance
 
@@ -221,8 +222,14 @@ Ordered by cost and discriminating power:
    variance-matching prerequisite satisfied, continuous and quantized targets land
    within +0.0002 NTP of each other at 16.8M tokens, and the quantized arm shows a
    slightly larger zero-feedback delta (`results/h5-quantized/README.md`).
-3. **Sequence length 4096 at the same token budget**, testing whether concept-position
-   granularity limits usefulness.
+3. ~~**Sequence length 4096 at the same token budget**~~ Executed: both arms at 1B
+   tokens on a byte-identical token stream regrouped into 4x longer windows
+   (`results/fineweb-edu-4096/README.md`). Held-out NTP gap +0.0006 (predicted neutral);
+   zero-feedback delta +0.1373, *larger* than at 1024 — the channel's use tracks the
+   number of in-window chunk decisions, not context length; shuffle/similar +0.0011;
+   codebook 7.22 ppl / 84.3% usage, just under the preregistered 1024 endpoint (a
+   recorded miss). The concept path pays a quadratic cost at 4096 (1.8x the NTP arm's
+   wall time per token, versus 1.2x at 1024).
 4. **4 to 8B tokens**, the same matched design, approaching the scales where the original
    paper's full-triple advantage appears.
 
