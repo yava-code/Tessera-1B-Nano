@@ -177,6 +177,13 @@ per generation call — transformers 4.x multinomial sampling draws from the glo
 reproducible (verified locally: bit-identical repeats, different text under a different
 seed). Same seed + prompt = bit-identical generations on every click.
 
+Browser E2E repeat on ZeroGPU (2026-10-01, after the daily quota reset): prompt
+"The most common metals are", 48 new tokens — click 1 (seed 7) and click 2 (seed 7)
+produced **bit-identical** text in all three columns (baseline, predicted, zeroed;
+teacher-forced losses 4.281 / 4.250 identical too), and click 3 (seed 8) changed all
+three columns while the deterministic teacher-forced losses stayed fixed. The seed
+toggle is verified end to end in the browser on the deployed Space.
+
 ## 5e. Long-run budget guard vs multi-hour configs (2026-10-01, seq-4096 probe)
 
 The seq-4096 NCP arm stopped cleanly at 789M/1B tokens when the config's
