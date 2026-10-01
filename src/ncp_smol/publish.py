@@ -157,6 +157,34 @@ def _findings(config: ExperimentConfig, evaluation: dict[str, Any]) -> str:
     )
 
 
+def _demo_media(config: ExperimentConfig) -> str:
+    """Hero media block: video embed on the 1B cards, nothing elsewhere."""
+    title = _card_title(config)
+    video = "https://huggingface.co/yava-code/Tessera-1B-Nano/resolve/main/demo.mp4"
+    tag = (
+        f"<video controls muted loop playsinline width=\"100%\">\n"
+        f"  <source src=\"{video}\" type=\"video/mp4\">\n"
+        "</video>\n\n"
+    )
+    if title == "Tessera-1B-Nano":
+        return (
+            f"{tag}"
+            "*60-second demo of the [comparison Space](https://huggingface.co/spaces/yava-code/tessera-comparison):\n"
+            "the metals rows were captured live from the Space; the photosynthesis row\n"
+            "was generated with the Space's own code against this checkpoint on CPU\n"
+            "(the ZeroGPU quota ran out mid-capture).*\n\n"
+        )
+    if title == "Tessera-1B-Nano-Base":
+        return (
+            f"{tag}"
+            "*60-second demo of the [comparison Space](https://huggingface.co/spaces/yava-code/tessera-comparison)\n"
+            "- the left column is this model. The metals rows were captured live from the Space;\n"
+            "the photosynthesis row was generated with the Space's code against the\n"
+            "published checkpoints on CPU.*\n\n"
+        )
+    return ""
+
+
 def _loading_snippet(config: ExperimentConfig) -> str:
     if config.run.mode == "ntp":
         call = 'AutoModelForCausalLM.from_pretrained("REPO_ID")'
@@ -216,7 +244,7 @@ license: apache-2.0
 # {title}
 
 {_intro(config)}
-{_tldr(config, interventions)}
+{_demo_media(config)}{_tldr(config, interventions)}
 {_findings(config, evaluation)}
 ## Numbers
 

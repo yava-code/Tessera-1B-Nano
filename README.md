@@ -1,5 +1,11 @@
 # Tessera: a language model that predicts its next thought
 
+![Tessera comparison demo](artifacts/demo/demo.gif)
+
+*Live demo: [tessera-comparison Space](https://huggingface.co/spaces/yava-code/tessera-comparison)
+— same seed reproduces the generations bit-for-bit; changing the seed redraws. Scroll up
+there and type your own prompt.*
+
 **Tessera-1B-Nano** ([HF weights](https://huggingface.co/yava-code/Tessera-1B-Nano),
 [live demo](https://huggingface.co/spaces/yava-code/tessera-comparison)) is an independent,
 small-scale replication of **ConceptLM** by Paragon Intelligence Labs. An ordinary

@@ -68,7 +68,8 @@ optim:
     assert "costs +0.1000 nats" in card
     assert "## The Tessera family" in card
     assert "(this model)**" in card
-    assert card.count("https://huggingface.co/yava-code/Tessera") == 3
+    # Three family links plus the demo video embed on the 1B card.
+    assert card.count("https://huggingface.co/yava-code/Tessera") == 4
 
 
 def test_model_card_includes_codebook_row(tmp_path: Path) -> None:
