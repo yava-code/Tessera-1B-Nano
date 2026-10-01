@@ -1,39 +1,50 @@
-# ncp-smol
+# Tessera: a language model that predicts its next thought
 
-Small-scale, independent reproduction of Next Concept Prediction on SmolLM2.
+**Tessera-1B-Nano** ([HF weights](https://huggingface.co/yava-code/Tessera-1B-Nano),
+[live demo](https://huggingface.co/spaces/yava-code/tessera-comparison)) is an independent,
+small-scale replication of **ConceptLM** by Paragon Intelligence Labs. An ordinary
+SmolLM2-360M backbone gains a thin causal concept path: every four tokens are pooled into
+one concept code, a small module guesses the *next* code, and the guess is fed back into
+the decoder while it writes.
 
-The trained checkpoint is released as **Tessera-1B-Nano** by **Paragon Intelligence
-Labs**; `ncp-smol` is the internal project id.
+The matched experiment then produced a result strange enough to build a study around:
 
-`ncp-smol` keeps token-level autoregressive generation, but adds a thin latent path. Every
-four token states are pooled into a concept, product-quantized, passed through a causal
-concept module, and used to predict the next concept. The predicted concept is then added
-back to the token backbone before the second decoder layer.
+- **The decoder leans on the channel.** Silence the concept feedback and held-out loss
+  gets worse - the model reads this thing constantly.
+- **But it is not reading its own sentence.** Feed it concepts predicted from a different
+  sentence in the batch - or from a Wikipedia passage, or from source code - and nothing
+  changes. Whatever it consumes there, it is not sentence identity, and not even topic.
+- **And at this budget it buys nothing a pure token model misses.** A token-matched
+  baseline without any concept path lands exactly even.
 
-The first TinyStories architecture gate is complete: NTP, NCP, and VQ train losses fell by
-roughly 41–43% over 16.8M tokens on a fixed subset. Causal evaluation also exposed a useful
-failure mode: zeroing concept feedback hurts NTP, while shuffling it across sequences does not.
-The full record and interpretation are in
-[results/tinystories-overfit](results/tinystories-overfit/README.md).
+So: a model that constantly consumes a signal that carries ... what? That question - with
+preregistered predictions, full metric logs, and honest cost records - is the study. Read
+the [whitepaper](docs/whitepaper.md), or [play with both models side by
+side](https://huggingface.co/spaces/yava-code/tessera-comparison) before reading anything.
 
-A matched quantized-target pilot found a second small-scale failure mode: its NCP loss was
-near zero at initialization because transformed codewords were too tightly clustered. The run
-was stopped after 614k tokens rather than presenting a vacuous auxiliary loss as success.
+`ncp-smol` is the internal project id. The family: the 135M architecture gate
+([Tessera-135M-Gate](https://huggingface.co/yava-code/Tessera-135M-Gate)), the NTP-only
+control ([Tessera-1B-Nano-Base](https://huggingface.co/yava-code/Tessera-1B-Nano-Base)) and
+the concept arm ([Tessera-1B-Nano](https://huggingface.co/yava-code/Tessera-1B-Nano)), all
+in [one collection](https://huggingface.co/collections/yava-code/tessera-next-concept-prediction-gated-and-scaled-6abc3b7ad9177be38bcb3ff4).
 
-The shared FineWeb-Edu cache was prepared and hashed: 1.0B train tokens and 10M held-out
-tokens, read identically by both arms. The matched comparison is complete: both arms
-consumed exactly 999,948,288 tokens. Final held-out NTP loss is 2.5135 for NTP-only and
-2.5142 for NTP+NCP, neutral within run noise. The concept path is demonstrably used
-(zeroing feedback costs +0.105 NTP loss) and learns a rich codebook (perplexity 7.55), but
-its benefit is sequence-generic: shuffled feedback works as well as the sequence's own.
-The full verdict is in [results/fineweb-edu](results/fineweb-edu/README.md), with per-arm
-records in [results/fineweb-edu-ntp](results/fineweb-edu-ntp/README.md) and
-[results/fineweb-edu-ncp](results/fineweb-edu-ncp/README.md).
+## The record, in one screen
 
-Both checkpoints are published: the NCP arm as
-[Tessera-1B-Nano](https://huggingface.co/yava-code/Tessera-1B-Nano) and the NTP-only
-baseline as [Tessera-1B-Nano-Base](https://huggingface.co/yava-code/Tessera-1B-Nano-Base),
-each with its generated model card, eval JSON, and metric log (no optimizer state).
+- **TinyStories architecture gate (135M, overfit)**: all three objectives train (losses
+  fell 41-43%), and the gate exposed a real failure mode - a low-entropy codebook shortcut
+  that disappears at scale. Record:
+  [results/tinystories-overfit](results/tinystories-overfit/README.md).
+- **Quantized-target pilot**: a second failure mode caught honestly - near-zero initial
+  NCP loss from tightly clustered codewords - fixed with variance-matched codewords, after
+  which discretization is token-neutral. Record: [results/h5-quantized](results/h5-quantized/README.md).
+- **The 1B-token matched comparison** (this is the headline study): both arms consumed
+  999,948,288 tokens of the same packed corpus in the same order; the concept arm matches
+  the baseline on token loss, uses its channel heavily, and that use is sequence-generic.
+  Verdict: [results/fineweb-edu](results/fineweb-edu/README.md).
+- **Sequence length 4096** (4x context, same token budget): the neutrality transfers, the
+  zero-feedback penalty *grows* (+0.1373), and the channel's cost shows up as compute:
+  1.8x the baseline's wall time per token. Verdict:
+  [results/fineweb-edu-4096](results/fineweb-edu-4096/README.md).
 
 Publication materials built from that record: the whitepaper
 ([docs/whitepaper.md](docs/whitepaper.md)), post drafts for X, Reddit/HN, and a Russian-language

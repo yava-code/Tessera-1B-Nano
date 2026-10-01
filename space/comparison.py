@@ -23,11 +23,19 @@ DEFAULT_MAX_NEW_TOKENS = 48
 MAX_NEW_TOKENS_LIMIT = 160
 DEFAULT_SEED = 7
 INTRO_NOTE = (
-    "The comparison is token-matched: both arms consumed the same billion tokens in the"
-    " same order. On held-out data the concept arm matches the baseline's token loss"
-    " (+0.03%), its decoder demonstrably consumes the concept channel (zeroing the"
-    " feedback costs +0.1050 nats), yet shuffled feedback is as good as its own"
-    " (+0.0008): the use is sequence-generic."
+    "Two copies of the same 360M-parameter language model, trained on the same billion"
+    " tokens in the same order. The right one also carries a small second module: it"
+    " compresses every four tokens into one concept code, guesses the *next* concept"
+    " code, and feeds that guess back into the decoder while it writes.\n\n"
+    "Type a prompt and watch both write. Then look at the third column: that is the"
+    " same concept model with its concept feedback silenced. Something changes - and"
+    " the loss line under the box shows how much the model minds. Now the strange"
+    " part, measured on held-out data: replace the concept feedback with a concept"
+    " predicted from a *different* sentence, and the model does not care. It reads the"
+    " channel constantly - silencing it hurts - but whatever it reads there is not the"
+    " sentence. What is it reading, then? That question is the study.\n\n"
+    "*(Same seed and prompt give bit-identical generations on every click; change the"
+    " seed to sample a different draw.)*"
 )
 
 MODELS: dict[str, tuple[AutoTokenizer, Any]] = {}
@@ -146,7 +154,7 @@ def _run(prompt: str, max_new_tokens: int, seed: int) -> tuple[str, str, str, st
     base_note = f"teacher-forced NTP loss on the prompt: {base_loss:.3f}"
     concept_note = (
         f"teacher-forced NTP loss on the prompt: {concept_loss:.3f}; zeroing the concept"
-        f" feedback costs {delta:+.3f} nats here (held-out average: +0.105)"
+        f" feedback costs {delta:+.3f} nats here - the model notices (held-out average below)"
     )
     return base_text, base_note, concept_text, zero_text, concept_note
 

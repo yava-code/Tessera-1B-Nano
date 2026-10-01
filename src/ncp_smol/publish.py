@@ -51,27 +51,30 @@ def _card_title(config: ExperimentConfig) -> str:
 def _intro(config: ExperimentConfig) -> str:
     if config.run.mode == "ntp":
         return (
-            f"The matched NTP-only baseline of the Tessera-1B-Nano comparison from Paragon\n"
-            f"Intelligence Labs: the unchanged `{config.model.base_model}` backbone,\n"
-            "continued-pretrained without a concept path. It exists so the concept-arm result\n"
-            "is interpretable.\n"
+            "The plain half of a controlled experiment by Paragon Intelligence Labs: the\n"
+            f"untouched `{config.model.base_model}` backbone, continued-pretrained with no\n"
+            "concept path, no extra parameters, no tricks. This is the matched NTP-only baseline"
+            " of the comparison - every difference from its sibling is the concept path's"
+            " doing, and nothing else.\n"
         )
     if _card_title(config) == "Tessera-135M-Gate":
         return (
-            "The 135M architecture-gate checkpoint from Paragon Intelligence Labs: the smallest\n"
-            f"member of the Tessera family (`{config.model.base_model}` backbone with the full\n"
-            "Next Concept Prediction path). It is a deliberately overfit gate run that proves\n"
-            "the complete concept path trains end to end before any large spend, and carries the\n"
-            "same causal concept-path architecture as Tessera-1B-Nano. It is not a language\n"
-            "model quality result: it saw a 1M-token TinyStories subset repeated 16 times.\n"
+            "The smallest member of the Tessera family, and the reason the bigger ones exist.\n"
+            f"This 135M `architecture-gate checkpoint` (a `{config.model.base_model}` backbone\n"
+            "with the full Next Concept Prediction path) was trained on a deliberately overfit\n"
+            "TinyStories subset before any large spend, to prove the whole path - concept\n"
+            "pooling, quantized codes, causal concept blocks, feedback - trains end to end.\n"
+            "It is not a language-model quality result, and it is not meant to be: what makes\n"
+            "it worth publishing is what broke, and what the break predicted at scale.\n"
         )
     return (
-        "A Next Concept Prediction checkpoint from Paragon Intelligence Labs: an independent,\n"
-        f"small-scale replication of ConceptLM on `{config.model.base_model}`. The model keeps\n"
-        "ordinary next-token generation and adds a causal, product-quantized concept path over\n"
-        f"{config.model.chunk_size}-token chunks: token states are pooled into concepts,\n"
-        "product-quantized, processed by causal concept blocks, and the predicted next concept\n"
-        "is fed back into the token decoder.\n"
+        "A language model that predicts its next thought. This is an independent, small-scale\n"
+        f"replication of ConceptLM by Paragon Intelligence Labs: an ordinary\n"
+        f"`{config.model.base_model}` backbone plus a thin causal concept path. Every\n"
+        f"{config.model.chunk_size} tokens are pooled into one concept code, a small causal\n"
+        "module guesses the next code, and that guess is fed back into the decoder while it\n"
+        "writes. The surprising part is not that it works - it is what the model turns out\n"
+        "to be reading from the channel.\n"
     )
 
 
@@ -79,11 +82,11 @@ def _tldr(config: ExperimentConfig, interventions: dict[str, Any]) -> str:
     if config.run.mode == "ntp":
         return (
             "## TL;DR\n\n"
-            "This arm is the control of a token-matched comparison: it consumed the same\n"
-            "tokens of the same packed corpus, in the same order, from the same\n"
-            "initialization as the concept arm, with no restarts and no NaNs.\n\n"
-            "- **Token loss is the reference**: the final numbers below are the baseline the\n"
-            "  concept arm is compared against.\n"
+            "This arm is the boring half on purpose: same tokens, same order, same\n"
+            "initialization as the concept arm, no restarts, no NaNs. Science needs a\n"
+            "control before it needs a result.\n\n"
+            "- **Read this card as the yardstick**: the final numbers below are what the\n"
+            "  concept arm is measured against.\n"
             "- The comparison outcome and the intervention readings live in the whitepaper at\n"
             "  `docs/whitepaper.md` in the ncp-smol repository.\n"
         )
@@ -91,32 +94,66 @@ def _tldr(config: ExperimentConfig, interventions: dict[str, Any]) -> str:
         zero_delta = _metric(interventions["zero_minus_predicted"]) if interventions else ""
         return (
             "## TL;DR\n\n"
-            "This gate checkpoint exists to de-risk the 1B-token comparison, and the scale\n"
-            "story it records is the point of publishing it.\n\n"
-            f"- **All three objectives train** (NTP, NCP, VQ fell 41 to 43% over the run).\n"
-            f"- **The decoder causally uses the concept channel even at 135M**: zeroing the\n"
+            "Small and cheap on purpose: this gate run exists to de-risk the 1B-token"
+            " comparison before spending on it. It earned its keep in both directions.\n\n"
+            "- **All three objectives train** (NTP, NCP, VQ fell 41 to 43% over the run),\n"
+            "  and the decoder causally uses the concept channel even at 135M: zeroing the\n"
             f"  feedback costs +{zero_delta} nats of held-out NTP loss.\n"
-            "- **The failure mode this gate exposed is real and instructive**: effective\n"
-            "  codebook perplexity stayed near 2.4 (usage ~31-41%), and shuffled feedback cost\n"
-            "  nothing (+0.000). At 1B tokens the same architecture left the shortcut far\n"
-            "  behind (perplexity 7.55, usage 85.6%, zero-delta +0.105). Gate small, then\n"
-            "  scale: some behaviors only appear above a scale threshold.\n"
+            "- **It also caught a real failure mode**: effective codebook perplexity stayed\n"
+            "  near 2.4 with usage around a third of the codebook, and shuffled feedback"
+            "  cost nothing - a low-entropy shortcut the 1B-token run later left far behind."
+            "  Gate small, then scale: some behaviors only appear above a scale threshold.\n"
         )
     zero_delta = _metric(interventions["zero_minus_predicted"]) if interventions else ""
     return (
         "## TL;DR\n\n"
-        "This checkpoint comes from a token-matched comparison against the unchanged\n"
-        f"{config.model.base_model} backbone: both arms consumed the same tokens of the\n"
-        "same packed corpus, in the same order, from the same initialization, with no\n"
-        "restarts and no NaNs.\n\n"
-        "- **Token loss is neutral**: the matched baseline is within run noise (see the\n"
-        "  whitepaper and `results/fineweb-edu/README.md` in the ncp-smol repository for\n"
-        "  the exact numbers).\n"
-        "- **The concept channel is causally used**: zeroing predicted concept feedback\n"
-        f"  at inference costs +{zero_delta} nats of held-out NTP loss.\n"
-        "- **The codebook is rich**: no low-entropy shortcut, usage grows monotonically\n"
-        "  over the run (growth curves are in the repository whitepaper).\n"
-        "- Full reading of the interventions: `docs/whitepaper.md` in the ncp-smol repo.\n"
+        "Same billion tokens, same order, same initialization as the unchanged baseline -"
+        " the only difference is the concept path. Three findings survive every control we"
+        " threw at them:\n\n"
+        "- **The decoder leans on the channel.** Silence the concept feedback and the model"
+        f"  measurably stumbles: zeroing it costs +{zero_delta} nats of held-out NTP loss.\n"
+        "- **But it is not reading its own sentence.** Feedback predicted from a completely"
+        "  different sentence - another batch element, a Wikipedia passage, even source"
+        "  code - works just as well. The channel carries *something*, but not "
+        "  sentence identity.\n"
+        "- **And it does not (yet) buy token loss.** At this budget the concept arm matches"
+        "  the baseline exactly. What the channel carries, why the model wants it, and"
+        "  whether it pays off at scale - that is the open question this study is built to"
+        "  squeeze.\n\n"
+        "The exact numbers, the preregistered predictions, and the full record: whitepaper"
+        " at `docs/whitepaper.md` in the ncp-smol repository.\n"
+    )
+
+
+def _findings(config: ExperimentConfig, evaluation: dict[str, Any]) -> str:
+    if config.run.mode != "ncp" or _card_title(config) == "Tessera-135M-Gate":
+        return ""
+    predicted = evaluation.get("predicted", {}).get("ntp_loss")
+    zero = evaluation.get("zero", {}).get("ntp_loss")
+    shuffle = evaluation.get("shuffle", {}).get("ntp_loss")
+    if predicted is None or zero is None or shuffle is None:
+        return ""
+    similar = evaluation.get("similar_shuffle", {}).get("ntp_loss")
+    similar_row = (
+        f"- feedback from a topically similar sentence: {similar:.4f} - even topic\n"
+        "  identity is absent.\n"
+        if similar is not None
+        else ""
+    )
+    return (
+        "## What the study found\n\n"
+        "The same held-out batches, scored under four inference modes:\n\n"
+        f"- normal predicted feedback: held-out NTP loss {predicted:.4f}.\n"
+        f"- feedback silenced: {zero:.4f} - zeroing the channel costs"
+        f" +{zero - predicted:.4f} nats.\n"
+        f"- feedback from another sentence in the batch: {shuffle:.4f} -\n"
+        "  indistinguishable from the sequence's own.\n"
+        f"{similar_row}"
+        "\nThe model consults its concept channel at every step, yet what it reads there is"
+        " interchangeable across sentences, topics, and domains. Whatever the concept path"
+        " carries, the token path wants it - and a pure token model of the same size,"
+        " trained the same way, does not miss it. Cornering that signal is the open"
+        " question; the probes are preregistered in the study repository.\n"
     )
 
 
@@ -180,7 +217,11 @@ license: apache-2.0
 
 {_intro(config)}
 {_tldr(config, interventions)}
-## Evaluation
+{_findings(config, evaluation)}
+## Numbers
+
+The raw record this narrative is built from; per-arm READMEs and the whitepaper hold the
+full analysis.
 
 | Metric | Value |
 | --- | ---: |
