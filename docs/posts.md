@@ -1,119 +1,151 @@
-# Post drafts for the completed comparison
+# Post drafts
 
-Three variants, same facts. Every number below is from the committed artifacts, not
-paraphrased. The released checkpoint is Tessera-1B-Nano by Paragon Intelligence Labs.
-Post nothing wider until the public checkpoint exists (Modal `huggingface`
-secret -> `modal_publish.py`).
+Three variants, one hook - the same one the Space and the cards lead with: *we taught a
+small LLM to predict its next thought; it reads those thoughts constantly, but cannot
+tell whose they are.* Story first, numbers for the record. Every number below is from the
+committed artifacts, not paraphrased. Everything referenced is live: the
+[Space](https://huggingface.co/spaces/yava-code/tessera-comparison) (with the demo video
+pinned at the top of the model cards and the README), the weights
+([Tessera-1B-Nano](https://huggingface.co/yava-code/Tessera-1B-Nano),
+[Tessera-1B-Nano-Base](https://huggingface.co/yava-code/Tessera-1B-Nano-Base)), and the
+study repo. Full tracked GPU spend so far: ~$140 ($55 the 1024 comparison arms, $79 the
+seq-4096 probe with its resume, the rest on the 135M gate, the h5 pilots, evals, and data
+prep).
 
 ## 1. X / Twitter thread (EN)
 
-**1/** We ran the cheapest controlled test of ConceptLM (Next Concept Prediction) we could
-design: SmolLM2-360M, two arms, 1B tokens each, one pure NTP and one with the concept path
-we release as Tessera-1B-Nano. Same data, same order, same everything. Total cost: ~$55.
-Here's what happened. 🧵
+**1/** We taught a small LLM to predict its next thought - and it reads those thoughts
+constantly. But it can't tell whose they are. 🧵
 
-**2/** First, the boring number: held-out loss 2.5135 (NTP) vs 2.5142 (NCP). +0.03% in
-favor of plain next-token prediction. Neutral. If this were the whole story, we wouldn't
-be posting a thread.
+We took an off-the-shelf 360M model, bolted on a tiny module that compresses every 4
+tokens into one concept code, guesses the next code, and feeds the guess back into the
+decoder. Then we trained two copies of it on the same billion tokens and watched.
 
-**3/** The whole story starts with the interventions. Take the trained NCP model and zero
-its concept feedback at inference: loss jumps +0.105 nats (+4.2% ppl). The decoder
-*demonstrably uses* the latent channel. That's a causal statement, not a correlation.
+**2/** Watch the demo first (60s, it's pinned at the top): left column writes, middle
+column writes, right column is the concept model with its thought-feedback silenced. The
+loss line shows how much the model minds. It minds.
+hf.co/spaces/yava-code/tessera-comparison
 
-**4/** Is the codebook a shortcut? No. Effective perplexity 7.55, 85.6% of codes in use,
-monotonically up from 2.93 at 100M tokens. Our earlier TinyStories gate fell into a
-~2.4-ppl low-entropy shortcut; at 1B tokens that failure mode is gone.
+**3/** The setup is the cheapest honest test of ConceptLM (Next Concept Prediction) we
+could design: SmolLM2-360M, two arms, 1B tokens each, same data in the same order, same
+schedule. One arm pure next-token prediction, one arm with the concept path. ~$55 of GPU
+for both. Everything preregistered, everything open.
 
-**5/** Now the twist. Shuffle concept feedback between sequences in the batch: cost is
-+0.0008, nothing. Feedback from *another sequence* works as well as your own. The decoder
-consumes the channel, but what it extracts isn't sequence-specific.
+**4/** Now the strange part, measured on held-out data. Zero the concept feedback: loss
+jumps +0.105 nats. The decoder leans on the channel. Causal intervention, not
+correlation.
 
-**6/** We saw the same zero-hurts/shuffle-doesn't split at 135M on TinyStories. Two scales,
-two data regimes, same structure. This split is the interesting object, not the 0.03%.
+**5/** Replace the concept feedback with concepts predicted from a *different* sentence
+in the batch: +0.0008, nothing. From a topically similar sentence: +0.0008. From
+Wikipedia articles: +0.0016. From Python source code: +0.0011. Any partner works. The
+model reads the channel at every step - and can't tell whose thoughts it's reading.
 
-**7/** Context: in the original ConceptLM paper's own ablation, NTP+one auxiliary is
-*worse* than pure NTP; only the full triple wins, and their gains appear at 8 to 300B
-tokens. Our neutral result at 1B mirrors that structure one scale down.
+**6/** So what is it reading? We don't know yet, and that's the point. It's not sentence
+identity, not topic, not domain. Whatever the concept path carries, the token path wants
+it - and a pure token model trained identically does not miss it.
 
-**8/** Everything is open: code, causal leakage tests, SHA-pinned data caches, full metric
-logs, both checkpoints' eval JSONs. Two matched 1B-token runs, zero restarts, zero NaNs.
-Next probes are stated in advance. Code and whitepaper:
-github.com/yava-code/Tessera-1B-Nano. Weights: hf.co/yava-code (Tessera-1B-Nano,
-Tessera-1B-Nano-Base).
+**7/** We pushed context 4x (seq 4096, same token budget): the pattern held, and the
+zero-feedback penalty *grew* (+0.1373). The channel isn't a short-context artifact.
+Also a cost finding: the concept path pays a quadratic price at long context, 1.8x the
+baseline's wall time per token.
+
+**8/** And yes: token loss is neutral at 1B tokens (2.5142 vs 2.5135). Same structure as
+the original paper, where only the full triple wins at 8-300B tokens. Neutral with a
+mystery is a finding, not a failure.
+
+**9/** Everything is open: code, 21-test suite incl. causality tests, SHA-pinned caches,
+full metric logs, both checkpoints, the 60s demo, preregistered next probes.
+github.com/yava-code/Tessera-1B-Nano
+hf.co/yava-code/Tessera-1B-Nano (+ -Base). Play with the Space first.
 
 ## 2. Reddit / Hacker News longread (EN)
 
-**Title:** Tessera-1B-Nano: we reproduced Next Concept Prediction at 360M for ~$55, the token loss stayed neutral, but the decoder demonstrably uses the concept channel (and shuffling it costs nothing)
+**Title:** We taught a 360M LLM to predict its next thought; it reads them constantly but can't tell whose they are ($140, everything open)
 
 **Body:**
 
-We independently reimplemented ConceptLM's Next Concept Prediction recipe on
-SmolLM2-360M and ran the most controlled comparison we could afford: two arms, pure
-next-token prediction vs NTP+concepts, each consuming exactly 999,948,288 tokens of the
-same packed FineWeb-Edu cache, in the same order, from the same initialization. No
-restarts, no NaNs, tracked compute about $55 for both runs combined. The checkpoint from
-the NTP+concepts arm is released as Tessera-1B-Nano (Paragon Intelligence Labs).
+We independently reimplemented ConceptLM's Next Concept Prediction on SmolLM2-360M:
+every 4 tokens are pooled into one concept code, a small causal module predicts the next
+code, and the prediction is fed back into the decoder while it writes. Two arms, same
+billion tokens in the same order, same initialization - one with the concept path, one
+without. The concept checkpoint is released as Tessera-1B-Nano with a live side-by-side
+demo Space (and a 60-second demo video pinned on the model cards).
 
-The headline is neutral: held-out loss 2.5135 vs 2.5142 (+0.03% for the baseline). If you
-stop reading there, you'll miss the parts we actually find interesting:
+If you open the Space, this is what you'll see, and it's the honest summary of the whole
+study: the decoder uses the concept channel constantly - silencing the feedback costs
++0.105 nats of held-out loss - but feed it concepts predicted from a *different* sentence
+and nothing changes (+0.0008). We pushed on that gap with everything we had:
 
-1. **The concept channel is causally used.** Zero the predicted concept feedback at
-   inference and held-out loss rises +0.105 nats (+4.2% perplexity). The decoder
-   measurably depends on what the concept path feeds it.
+1. **Similar sentences**: swap in feedback from the most topically similar sequence:
+   +0.0008. Even topic identity is absent.
 
-2. **The learned vocabulary is rich.** Codebook effective perplexity 7.55 with 85.6%
-   usage, grown monotonically over the run (2.93 -> 7.55). Our earlier TinyStories gate
-   hit a low-entropy shortcut (~2.4 ppl); at 1B tokens that failure mode is gone.
+2. **Foreign domains**: feedback computed by the same model on Wikipedia articles
+   (+0.0016) or on Python source code (+0.0011) works as well as its own. Not domain
+   either.
 
-3. **But the use is sequence-generic.** Replace each sequence's concept feedback with
-   another sequence's from the same batch: cost +0.0008, i.e. nothing. We then replaced
-   it with the most *similar* sequence's feedback: +0.0008 again. Then we went
-   cross-domain: feedback computed by the same model on Wikipedia articles (+0.0016) or
-   on Python source code (+0.0011) swapped in as the decoder's concept feedback. All
-   near zero; only silencing the channel entirely (+0.1050) hurts. The decoder consumes
-   something, but neither sequence, topic, nor even domain identity. The same split
-   appeared at our 135M TinyStories gate, replicated across two scales.
+3. **Longer context**: re-run both arms at sequence length 4096, same token budget. The
+   gap to the baseline stayed at +0.0006, the zero-feedback penalty *grew* to +0.1373,
+   and the shuffle controls stayed at noise. The channel isn't a short-context artifact;
+   its use scales with the number of in-window chunk decisions.
 
-For calibration: the original paper's own ablation shows NTP+either auxiliary *alone* is
-worse than pure NTP, and only the full loss triple wins at 8–300B-token scales. A neutral
-result at 1B tokens with sharply falling auxiliary losses mirrors that structure rather
-than contradicting it. Mechanistically, concept layers run on T/k = 256 positions per
-sequence here, a coarse summary channel, which is consistent with what the shuffle
-control measures.
+4. **The codebook is real**: effective perplexity 7.55, 85.6% of codes in use,
+   monotonically up from 2.93. Our earlier 135M TinyStories gate fell into a ~2.4-ppl
+   low-entropy shortcut; the gate run caught it cheaply and the 1B run left it behind.
 
-Methodology notes that mattered to us: causality is enforced by construction and tested
-(prefix changes never change earlier logits); held-out comparisons are batch-exact (fixed
-seed), not just dataset-exact; we aborted a quantized-target pilot when its auxiliary loss
-sat at ~1e-6 and wrote down the prerequisite for retrying it (normalized codewords) rather
-than reporting a vacuous "training works"; next probes are stated in advance.
+5. **Token loss stays neutral** (2.5135 vs 2.5142 at 1B tokens), which mirrors the
+   original paper's own ablation: NTP plus a single auxiliary is *worse* than pure NTP
+   there, and their reported gains arrive at 8-300B tokens with the full loss triple.
 
-Everything is open: training code, 21-test suite, SHA-pinned data caches, full metric
-logs, eval JSONs with all three intervention modes, and both arms' records.
+So: a model that constantly consumes a signal that carries ... what? Not sequence, not
+topic, not domain. That question - with preregistered predictions (three of four landed
+at 4096; the fourth missed by 0.33 ppl and is recorded as a miss) - is the study.
+
+Methodology notes people asked about last time: causality is enforced by construction and
+regression-tested (changing a suffix never changes earlier logits); held-out comparisons
+are batch-exact by fixed seed; we aborted a quantized-target pilot when its auxiliary
+loss sat at ~1e-6 and wrote down the prerequisite instead of reporting a vacuous success
+(with normalized codewords the repeat came out token-neutral); the seq-4096 NCP arm hit
+its $40 budget guard at 789M tokens because the concept path pays a quadratic cost at
+long context (15.0k vs 26.9k tok/s), and we resumed it to the full budget with the stop
+documented.
+
+Total tracked spend so far: ~$140 - $55 for the two 1024 arms, $79 for the seq-4096
+probe (including the budget stop and resume), the rest on the 135M gate, the quantized
+target pilots, evaluations, and data preparation. Everything is open: training code,
+21-test suite, SHA-pinned caches, full metric logs, eval JSONs with all intervention
+modes, both checkpoints, the demo.
 
 ## 3. Короткий пост (RU)
 
-Воспроизвели Next Concept Prediction (ConceptLM) на SmolLM2-360M и прогнали самое
-честное сравнение, которое могли себе позволить: два arm'а, 1B токенов каждый,
-одинаковые данные в одинаковом порядке, с концепт-путём и без. Чекпойнт с концепт-путём
-выпускаем как Tessera-1B-Nano (Paragon Intelligence Labs). ~$55 за оба прогона.
+Мы научили маленькую LLM предсказывать следующую «мысль» - и она читает эти мысли
+постоянно, но не может понять, чьи они.
 
-Заголовок скучный: лосс 2.5135 vs 2.5142 (+0.03% в пользу обычного NTP). Нейтрально.
+Как устроено: каждые 4 токена сжимаются в один концепт-код, маленький каузальный модуль
+угадывает следующий код, и эта догадка подаётся декодеру, пока он пишет. Два клона
+SmolLM2-360M, один миллиард токенов, одинаковый порядок данных - с концепт-путём и без.
+Это независимая репликация ConceptLM (Next Concept Prediction), всё открыто: ~$140 GPU за
+всё исследование, чекпойнты, демо Space.
 
-А теперь интересное:
+Что показало сравнение:
 
-- Зануляем концепт-фидбек на инференсе: +0.105 натов (+4.2% ppl). Декодер *реально
-потребляет* канал: это каузальное вмешательство, не корреляция.
+- Занулили концепт-фидбек на инференсе: +0.105 натов лосса. Декодер реально опирается на
+  канал - каузальное вмешательство, не корреляция.
 
-- Кодбук живой: эффективная ppl 7.55, использование 85.6%, монотонный рост с 2.93.
-Low-entropy шортката, в который падал наш TinyStories-гейт, на 1B токенов нет.
+- Подсунули фидбек от *чужого* предложения в батче: +0.0008, ничего. От топически
+  похожего: +0.0008. Из Википедии: +0.0016. Из питон-кода: +0.0011. Модель читает канал
+  на каждом шаге - и не отличает свои мысли от чужих.
 
-- Но! Шафлим фидбек между последовательностями: +0.0008, то есть ничего. Фидбек чужой
-последовательности почти так же хорош, как свой. Канал несёт топику, не идентичность
-текста. Тот же сплит мы видели на 135M, воспроизведено на двух масштабах.
+- Удлинили контекст в 4 раза (seq 4096, тот же бюджет): паттерн сохранился, а штраф за
+  зануление вырос до +0.1373. Шорткат короткого контекста исключён.
 
-В оригинальной статье NTP+одна вспомогательная тоже хуже чистого NTP, выигрывает только
-полная тройка, и на 8–300B токенов. Наш нейтральный результат на 1B повторяет эту
-структуру на масштаб ниже, а не противоречит ей.
+- Сам токен-лосс при этом нейтрален (2.5135 vs 2.5142). В оригинальной статье выигрыш
+  появляется только на 8-300B токенов с полной тройкой лоссов - наша нейтральность на 1B
+  повторяет эту структуру, а не противоречит ей.
 
-Всё открыто: код, каузальные тесты, хэши датасетов, полные логи метрик. Следующие пробы
-сформулированы заранее.
+Что именно несёт канал, если не идентичность, не топик и не домен - открытый вопрос, ради
+которого всё и затевалось. Следующие пробы сформулированы заранее, до прогона.
+
+Демо (одинаковый seed = бит-в-бит те же генерации):
+hf.co/spaces/yava-code/tessera-comparison
+Веса: hf.co/yava-code (Tessera-1B-Nano, Tessera-1B-Nano-Base)
+Код, whitepaper, логи: github.com/yava-code/Tessera-1B-Nano
